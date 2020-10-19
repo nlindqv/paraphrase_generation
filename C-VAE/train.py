@@ -17,7 +17,7 @@ if __name__ == "__main__":
                         help='num iterations (default: 60000)')
     parser.add_argument('--batch-size', type=int, default=32, metavar='BS',
                         help='batch size (default: 32)')
-    parser.add_argument('-cuda', '--use-cuda', type=bool, default=False, metavar='CUDA',
+    parser.add_argument('-cuda', '--use-cuda', type=bool, default=True, metavar='CUDA',
                         help='use cuda (default: True)')
     parser.add_argument('--learning-rate', type=float, default=0.00005, metavar='LR',
                         help='learning rate (default: 0.00005)')
@@ -61,6 +61,10 @@ if __name__ == "__main__":
         kld_result_valid = list(np.load('logs/kld_result_valid_{}.npy'.format(args.model_name)))
         ce_result_train = list(np.load('logs/ce_result_train_{}.npy'.format(args.model_name)))
         kld_result_train = list(np.load('logs/kld_result_train_{}.npy'.format(args.model_name)))
+        if args.use_two_path_loss:
+            ce2_result_valid = list(np.load('logs/ce2_result_valid_{}.npy'.format(args.model_name)))
+            ce2_result_train = list(np.load('logs/ce2_result_train_{}.npy'.format(args.model_name)))
+
 
     if args.use_cuda:
         paraphraser = paraphraser.cuda()
@@ -140,10 +144,14 @@ if __name__ == "__main__":
 
             for i in range(len(sampled)):
                 result = paraphraser.sample_with_pair(batch_loader, 20, args.use_cuda, s1[i], s2[i])
+
                 print('source: ' + s1[i])
                 print('target: ' + s2[i])
                 print('valid: ' + sampled[i])
                 print('sampled: ' + result)
+                if args.use_two_path_loss:
+                    result2 = paraphraser.sample_with_pair(batch_loader, 20, args.use_cuda, s1[i], s2[i], input_only=True)
+                    print('sampled 2: ' + result2)
                 print('...........................')
 
         # save model
@@ -153,6 +161,10 @@ if __name__ == "__main__":
             np.save('logs/kld_result_valid_{}'.format(args.model_name), np.array(kld_result_valid))
             np.save('logs/ce_result_train_{}.npy'.format(args.model_name), np.array(ce_result_train))
             np.save('logs/kld_result_train_{}'.format(args.model_name), np.array(kld_result_train))
+            if args.use_two_path_loss:
+                np.save('logs/ce2_result_valid_{}.npy'.format(args.model_name), np.array(ce2_result_valid))
+                np.save('logs/ce2_result_train_{}.npy'.format(args.model_name), np.array(ce2_result_train))
+
 
         #interm sampling
         if (iteration % 20000 == 0 and iteration != 0) or iteration == (args.num_iterations - 1):
@@ -161,8 +173,8 @@ if __name__ == "__main__":
                 args.use_mean = False
                 args.seq_len = 30
 
-                result, target, source = sample.sample_with_input_file(batch_loader,
-                                paraphraser, args, sample_file)
+                (result, result2), target, source = sample.sample_with_input_file(batch_loader,
+                                paraphraser, args, sample_file, args.use_two_path_loss)
 
                 sampled_file_dst = 'logs/intermediate/sampled_out_{}k_{}{}.txt'.format(
                                             iteration//1000, sample_file, args.model_name)
@@ -173,8 +185,16 @@ if __name__ == "__main__":
                 np.save(sampled_file_dst, np.array(result))
                 np.save(target_file_dst, np.array(target))
                 np.save(source_file_dst, np.array(source))
+
+                if args.use_two_path_loss:
+                    sampled2_file_dst = 'logs/intermediate/sampled2_out_{}k_{}{}.txt'.format(
+                                                iteration//1000, sample_file, args.model_name)
+                    np.save(sampled2_file_dst, np.array(result))
+
                 print('------------------------------')
                 print('results saved to: ')
                 print(sampled_file_dst)
+                if args.use_two_path_loss:
+                    print(sampled2_file_dst)
                 print(target_file_dst)
                 print(source_file_dst)
