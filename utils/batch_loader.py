@@ -54,9 +54,7 @@ class BatchLoader:
         self.df_from_file = None
         self.sampling_file_name = None
         self.datasets = datasets
-        self.quora_data_files = [path + '../datasets/train140k.csv', path + '../datasets/test.csv']
-        # self.fasttext_path = '/home/aleksey.zotov/InferSent/dataset/GloVe/glove.840B.300d.txt'
-        # self.fasttext_path = 'C:\\Users\\Niklas Lindqvist\\Documents\\WordEmbeddings\\cc.sv.300.bin'
+        self.quora_data_files = [path + 'datasets/train140k.csv', path + 'datasets/test.csv']
 
         if sentences is None:
             self.read_train_test_dataset()
