@@ -1,60 +1,14 @@
-# Pytorch Recurrent Variational Autoencoder 
+# paraphrases-generator
+Paraphrases generator based on RAVE.
 
-## Model:
-This is the implementation of Samuel Bowman's [Generating Sentences from a Continuous Space](https://arxiv.org/abs/1511.06349#)
-with Kim's [Character-Aware Neural Language Models](https://arxiv.org/abs/1508.06615) embedding for tokens
+This is the implementation of [A Deep Generative Framework for Paraphrase Generation](https://arxiv.org/abs/1709.05074).
 
-## Sampling examples:
-> the new machine could be used to increase the number of ventures block in the company 's \<unk> shopping system to finance diversified organizations
+RVAE Base: https://github.com/kefirski/pytorch_RVAE
 
-> u.s. government officials also said they would be willing to consider whether the proposal could be used as urging and programs
+Now it's runnable for pytorch versions 0.2 and 0.4.
 
-> men believe they had to go on the \<unk> because their \<unk> were \<unk> expensive important
+Uses pretrained Glove embeddings.
 
-> the companies insisted that the color set could be included in the program
-
-## Usage
-### Before model training it is necessary to train word embeddings:
-```
-$ python train_word_embeddings.py
-```
-
-This script train word embeddings defined in [Mikolov et al. Distributed Representations of Words and Phrases](https://arxiv.org/abs/1310.4546)
-
-#### Parameters:
-`--use-cuda`
-
-`--num-iterations`
-
-`--batch-size`
-
-`--num-sample` –– number of sampled from noise tokens
-
-
-### To train model use:
-```
-$ python train.py
-```
-
-#### Parameters:
-`--use-cuda`
-
-`--num-iterations`
-
-`--batch-size`
-
-`--learning-rate`
- 
-`--dropout` –– probability of units to be zeroed in decoder input
-
-`--use-trained` –– use trained before model
-
-### To sample data after training use:
-```
-$ python sample.py
-```
-#### Parameters:
-`--use-cuda`
-
-`--num-sample`
+Dataset: 
+[First Quora Pairs Dataset Release](https://data.quora.com/First-Quora-Dataset-Release-Question-Pairs)
 

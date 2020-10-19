@@ -2,46 +2,58 @@ import torch as t
 import torch.nn as nn
 import torch.nn.functional as F
 
-from selfModules.highway import Highway
-from utils.functional import parameters_allocation_check
-
-
 class Encoder(nn.Module):
-    def __init__(self, params):
+    def __init__(self, params, highway):
         super(Encoder, self).__init__()
 
         self.params = params
+        self.hw1 = highway
 
-        self.hw1 = Highway(self.params.sum_depth + self.params.word_embed_size, 2, F.relu)
+        # encoding source and target
+        self.rnns = nn.ModuleList([nn.LSTM(input_size=self.params.word_embed_size,
+                                       hidden_size=self.params.encoder_rnn_size,
+                                       num_layers=self.params.encoder_num_layers,
+                                       batch_first=True,
+                                       bidirectional=True) for i in range(2)])
 
-        self.rnn = nn.LSTM(input_size=self.params.word_embed_size + self.params.sum_depth,
-                           hidden_size=self.params.encoder_rnn_size,
-                           num_layers=self.params.encoder_num_layers,
-                           batch_first=True,
-                           bidirectional=True)
+        self.context_to_mu = nn.Linear(self.params.encoder_rnn_size * 4, self.params.latent_variable_size)
+        self.context_to_logvar = nn.Linear(self.params.encoder_rnn_size * 4, self.params.latent_variable_size)
 
-    def forward(self, input):
+    def forward(self, input_source, input_target):
         """
-        :param input: [batch_size, seq_len, embed_size] tensor
-        :return: context of input sentenses with shape of [batch_size, latent_variable_size]
+        :param input_source: [batch_size, seq_len, embed_size] tensor
+        :param input_target: [batch_size, seq_len, embed_size] tensor
+        :return: distributinon parameters of input sentenses with shape of
+            [batch_size, latent_variable_size]
         """
 
-        [batch_size, seq_len, embed_size] = input.size()
 
-        input = input.view(-1, embed_size)
-        input = self.hw1(input)
-        input = input.view(batch_size, seq_len, embed_size)
+        state = None
+        if input_target==None:
+            # Second path through the network
+            [batch_size, seq_len, embed_size] = input_source.size()
 
-        assert parameters_allocation_check(self), \
-            'Invalid CUDA options. Parameters should be allocated in the same memory'
+            input_source = input_source.view(-1, embed_size)
+            input_source = self.hw1(input_source)
+            input_source = input_source.view(batch_size, seq_len, embed_size)
 
-        ''' Unfold rnn with zero initial state and get its final state from the last layer
-        '''
-        _, (_, final_state) = self.rnn(input)
+            _, state = self.rnns[0](input_source, state)
 
-        final_state = final_state.view(self.params.encoder_num_layers, 2, batch_size, self.params.encoder_rnn_size)
-        final_state = final_state[-1]
-        h_1, h_2 = final_state[0], final_state[1]
-        final_state = t.cat([h_1, h_2], 1)
+        else:
+            # (num_layers * num_directions, batch, hidden_size)
+            for i, input in enumerate([input_source , input_target]):
+                [batch_size, seq_len, embed_size] = input.size()
+                input = input.view(-1, embed_size)
+                input = self.hw1(input)
+                input = input.view(batch_size, seq_len, embed_size)
+                _, state = self.rnns[i](input, state)
 
-        return final_state
+        [h_state, c_state] = state
+        h_state = h_state.view(self.params.encoder_num_layers, 2, batch_size, self.params.encoder_rnn_size)[-1]
+        c_state = c_state.view(self.params.encoder_num_layers, 2, batch_size, self.params.encoder_rnn_size)[-1]
+        h_state = h_state.permute(1,0,2).contiguous().view(batch_size, -1)
+        c_state = c_state.permute(1,0,2).contiguous().view(batch_size, -1)
+        final_state = t.cat([h_state, c_state], 1)
+        mu, logvar = self.context_to_mu(final_state), self.context_to_logvar(final_state)
+
+        return mu, logvar

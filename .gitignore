@@ -3,21 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-**/.idea
-experimentation.py
-*.DS_Store
-**/__pycache__
+# C extensions
 *.so
-
-word_embedding.png
-characters_vocab.pkl
-valid_character_tensor.npy
-train_character_tensor.npy
-word_embeddings.npy
-train_word_tensor.npy
-valid_word_tensor.npy
-words_vocab.pkl
-trained_RVAE
 
 # Distribution / packaging
 .Python
@@ -33,6 +20,7 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -55,7 +43,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
-*,cover
+*.cover
 .hypothesis/
 
 # Translations
@@ -79,7 +67,7 @@ docs/_build/
 # PyBuilder
 target/
 
-# IPython Notebook
+# Jupyter Notebook
 .ipynb_checkpoints
 
 # pyenv
@@ -88,15 +76,30 @@ target/
 # celery beat schedule file
 celerybeat-schedule
 
+# SageMath parsed files
+*.sage.py
+
 # dotenv
 .env
 
 # virtualenv
+.venv
 venv/
 ENV/
 
 # Spyder project settings
 .spyderproject
+.spyproject
 
 # Rope project settings
 .ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+
+data/
+saved_models/
+logs/
