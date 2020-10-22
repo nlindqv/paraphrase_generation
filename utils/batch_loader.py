@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import collections
 import os
 import re
@@ -8,7 +9,7 @@ import pandas as pd
 import fasttext
 import fasttext.util
 from tqdm import tqdm
-import pickle
+import pickle5 as pickle
 
 def clean_str(string):
     '''
@@ -54,7 +55,7 @@ class BatchLoader:
         self.df_from_file = None
         self.sampling_file_name = None
         self.datasets = datasets
-        self.quora_data_files = [path + 'datasets/train140k.csv', path + 'datasets/test.csv']
+        self.quora_data_files = [path + 'datasets/train100k.csv', path + 'datasets/test.csv']
 
         if sentences is None:
             self.read_train_test_dataset()
@@ -135,7 +136,7 @@ class BatchLoader:
             }
 
             if file_name in predefined_datasets.keys():
-                self.df_from_file = predefined_datasets[file_name]()[1]
+                self.df_from_file = predefined_datasets[file_name][1]
             else:
                 self.df_from_file = pd.read_csv(file_name)
 
