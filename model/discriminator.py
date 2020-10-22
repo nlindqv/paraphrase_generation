@@ -12,7 +12,9 @@ class Discriminator(nn.Module):
                         batch_first=True,
                         dropout=0.3,
                         bidirectional=True)
-        self.fc = nn.Linear(4*self.params.discriminator_rnn_size, 1)
+        self.fc = nn.Linear(4*self.params.discriminator_rnn_size, 4*self.params.discriminator_rnn_size)
+        self.relu = nn.Relu()
+        self.out = nn.Linear(4*self.params.discriminator_rnn_size, 1)
 
     def forward(self, sentences):
         """
@@ -30,6 +32,8 @@ class Discriminator(nn.Module):
         final_state = t.cat([h_state, c_state], 1)
 
         output = self.fc(final_state)
+        output = self.relu(output)
+        output = self.out(output)
         output = t.squeeze(output, 1)
         output = t.sigmoid(output)
 

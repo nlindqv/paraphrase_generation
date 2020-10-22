@@ -28,7 +28,7 @@ class Rollout(object):
 		# print(f'embed_size: {embed_size}')
 
 		for i in range(rollout_num):
-			print(f'Rollout {i+1}/{rollout_num}')
+			# print(f'Rollout {i+1}/{rollout_num}')
 			for l in range(1, seq_len):
 				data = x[:, 0:l, :]
 				# samples = [batch_size, seq_len, embed_size(300)]
