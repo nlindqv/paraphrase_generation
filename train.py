@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 import argparse
 import os
+import sys
 
 import numpy as np
 import torch as t
@@ -11,7 +13,8 @@ from model.parameters import Parameters
 from model.paraphraser import Paraphraser
 
 if __name__ == "__main__":
-
+    print(sys.getdefaultencoding())
+    print(sys.getfilesystemencoding())
     parser = argparse.ArgumentParser(description='Paraphraser')
     parser.add_argument('--num-iterations', type=int, default=300000, metavar='NI',
                         help='num iterations (default: 60000)')
@@ -157,6 +160,7 @@ if __name__ == "__main__":
         # save model
         if (iteration % 10000 == 0 and iteration != 0) or iteration == (args.num_iterations - 1):
             t.save(paraphraser.state_dict(), 'saved_models/trained_paraphraser_' + args.model_name)
+            np.save('logs/ce_result_valid_{}.npy'.format(args.model_name), np.array(ce_result_valid))
             np.save('logs/ce_result_valid_{}.npy'.format(args.model_name), np.array(ce_result_valid))
             np.save('logs/kld_result_valid_{}'.format(args.model_name), np.array(kld_result_valid))
             np.save('logs/ce_result_train_{}.npy'.format(args.model_name), np.array(ce_result_train))

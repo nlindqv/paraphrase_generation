@@ -1,0 +1,1503 @@
+utf-8
+utf-8
+QUORA: train: 141802, test: 4000
+ALL: train: 141802, test: 4000
+Vocab size : 53843
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+0
+--------CROSS-ENTROPY---------
+9.905936
+----CROSS-ENTROPY-2ND PATH----
+9.912954
+-------------KLD--------------
+0.33342433
+-----------KLD-coef-----------
+0.0009110511944006583
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+9.900946
+----CROSS-ENTROPY-2ND-PATH----
+9.902939
+-------------KLD--------------
+0.33671024
+------------------------------
+source: hur förbättrar jag min skicklighet och tänkande
+target: hur förbättrar jag min kompetens och resonemang
+valid: han gatsby erbjudandebrevet upphovsrättsproblem oförskämd fashionista strejkerna konstellationer beskära
+sampled:  medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme medarbetarutrymme
+sampled 2:  skott skott skott skott skott skott vattenrenaren vattenrenaren vattenrenaren vattenrenaren vattenrenaren vattenrenaren vattenrenaren vattenrenaren vattenrenaren vattenrenaren vattenrenaren vattenrenaren vattenrenaren vattenrenaren
+...........................
+source: hur kan jag övervinna fördröjningen
+target: vad är det bästa sättet att undvika förhalning
+valid: proffs infp framstående konflikt kollektivtrafik ovanpå konspirationsteorin miljarder processen
+sampled:  ambitiös detektiver detektiver detektiver detektiver detektiver detektiver detektiver detektiver detektiver detektiver detektiver detektiver detektiver detektiver detektiver detektiver detektiver detektiver detektiver
+sampled 2:  sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati sociopati
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+500
+--------CROSS-ENTROPY---------
+3.6303844
+----CROSS-ENTROPY-2ND PATH----
+3.636408
+-------------KLD--------------
+715.74066
+-----------KLD-coef-----------
+0.002472623156634768
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.9060473
+----CROSS-ENTROPY-2ND-PATH----
+2.931292
+-------------KLD--------------
+144.62283
+------------------------------
+source: vem är några av de smartaste människor som lever idag
+target: vem är de smartaste människorna som lever nu
+valid: vad nystartad vilket har och touch från att </s> </s> </s> </s> </s> </s> </s>
+sampled:  hur är jag att
+sampled 2:  hur är jag
+...........................
+source: hur begränsas svarta pengar med förbudet mot 1000 rupier och införande av nya 500 och 2000 rupier
+target: hur begränsar förbudet mot rs 500 och rs 1000 sedlar problemet med svarta pengar
+valid: hur tror efter bangalore 305 <unk> skillnaden </s> på </s> hört </s> </s> </s> </s>
+sampled:  hur är jag jag
+sampled 2:  hur är jag jag
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+1000
+--------CROSS-ENTROPY---------
+2.746998
+----CROSS-ENTROPY-2ND PATH----
+2.9041011
+-------------KLD--------------
+202.3805
+-----------KLD-coef-----------
+0.006692850924284843
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.590321
+----CROSS-ENTROPY-2ND-PATH----
+2.780143
+-------------KLD--------------
+130.14485
+------------------------------
+source: vid vilken ålder är det säkert att lämna två kattungar ensamma hemma i 5 timmar
+target: vad är rätt ålder för att lämna två kattungar ensamma
+valid: vad uppfinningar du system och de av bär resurserna <unk> någonstans
+sampled:  hur är jag bästa att att att i
+sampled 2:  hur är jag bästa att att att
+...........................
+source: vad är ett socialt fenomen vilka är några exempel
+target: vilka är exempel på ett politiskt fenomen
+valid: hur eskort du kinesiska <unk> strejk specifikt kärna </s> </s> </s>
+sampled:  hur är jag att att att
+sampled 2:  hur är jag att att
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+1500
+--------CROSS-ENTROPY---------
+2.6172616
+----CROSS-ENTROPY-2ND PATH----
+2.8159125
+-------------KLD--------------
+93.88793
+-----------KLD-coef-----------
+0.01798620996209155
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.6228065
+----CROSS-ENTROPY-2ND-PATH----
+2.8191066
+-------------KLD--------------
+60.155293
+------------------------------
+source: hur kan jag gå upp i vikt men också äta hälsosamt
+target: hur går jag upp i vikt snabbt men är fortfarande frisk
+valid: mitt är jag ner sociala vad tjänar om på en </s> </s>
+sampled:  hur är jag bästa att att att i i
+sampled 2:  hur är jag bästa att att
+...........................
+source: spelar universitetets ranking verkligen någon roll
+target: spelar universitetsranking verkligen någon roll
+valid: finns eslands rumpor sant </s> en </s> </s> </s> </s> </s> </s>
+sampled:  hur är jag i
+sampled 2:  hur är bästa att
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+2000
+--------CROSS-ENTROPY---------
+2.609104
+----CROSS-ENTROPY-2ND PATH----
+2.815107
+-------------KLD--------------
+43.948647
+-----------KLD-coef-----------
+0.0474258731775668
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.5567653
+----CROSS-ENTROPY-2ND-PATH----
+2.7622917
+-------------KLD--------------
+27.822418
+------------------------------
+source: har nya 2000 inr verkligen en ngc nano gps chip eller är det bara ett rykte
+target: finns det verkligen ett chip inbäddat i den nya rupees 2000 sedeln
+valid: hur är med sättet när sanna plötsligt behöver allt några skillnad års det
+sampled:  vilka är jag bästa att att att att och i i
+sampled 2:  vilka är jag bästa att att och
+...........................
+source: vad är mörk materia och bör den finnas
+target: vad är mörk materia och varför tror forskare att det finns
+valid: vad recensioner favorit berätta dem hillary för </s> kemiteknik sig som </s> </s>
+sampled:  hur är jag bästa att att att att i
+sampled 2:  hur är jag bästa att
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+2500
+--------CROSS-ENTROPY---------
+2.5702002
+----CROSS-ENTROPY-2ND PATH----
+2.7818904
+-------------KLD--------------
+23.692812
+-----------KLD-coef-----------
+0.11920292202211757
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.8050342
+----CROSS-ENTROPY-2ND-PATH----
+3.0219266
+-------------KLD--------------
+16.224186
+------------------------------
+source: behandlas staten israel orättvist vid fn
+target: har fn behandlat israel rättvist
+valid: kommer förlusten bästa bästa vd </s> </s> </s>
+sampled:  vad är de bästa i
+sampled 2:  vad är bästa bästa
+...........................
+source: vilka webbplatser brukar du börja dagen med
+target: vilka webbplatser eller appar besöker du vanligtvis
+valid: hur fiktionböcker den lära hälsoproblem ekonomin </s> i
+sampled:  vad är jag bästa att att
+sampled 2:  vad är jag bästa att
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+3000
+--------CROSS-ENTROPY---------
+2.541447
+----CROSS-ENTROPY-2ND PATH----
+2.7474632
+-------------KLD--------------
+13.645718
+-----------KLD-coef-----------
+0.2689414213699951
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.5342355
+----CROSS-ENTROPY-2ND-PATH----
+2.737874
+-------------KLD--------------
+8.868677
+------------------------------
+source: tror du att människan någonsin kommer att kolonisera andra stjärnsystem
+target: kommer människor att någonsin kolonisera andra solsystem
+valid: är är se dig ämnen gillar användare </s> </s> </s> </s> </s> </s> </s> </s> </s>
+sampled:  hur är jag bästa att att
+sampled 2:  hur är jag bästa att
+...........................
+source: varför anses kärnenergi vara förnybar
+target: betraktas kärnenergi som en förnybar eller icke förnybar resurs vilka är anledningarna till denna klassificering
+valid: vilka bevis vissa att alternativen en under av har mästare pv dag </s> </s> </s> </s>
+sampled:  vad är bästa att att att att att
+sampled 2:  vad är bästa
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+3500
+--------CROSS-ENTROPY---------
+2.5489583
+----CROSS-ENTROPY-2ND PATH----
+2.7470326
+-------------KLD--------------
+8.116645
+-----------KLD-coef-----------
+0.5
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.5234914
+----CROSS-ENTROPY-2ND-PATH----
+2.719022
+-------------KLD--------------
+6.4426827
+------------------------------
+source: vilka är de bästa böckerna för att förbereda gate
+target: vilka är de bästa böckerna för gate
+valid: vad är det att pengar snapchat om för
+sampled:  vad är det bästa att att att att att
+sampled 2:  vad är jag bästa att att
+...........................
+source: kommer tidsmaskinen att uppfinnas
+target: kan en tidsmaskin verkligen uppfinnas
+valid: vilket kan endast komma min videospel </s> </s>
+sampled:  hur är jag att att
+sampled 2:  hur är en att
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+4000
+--------CROSS-ENTROPY---------
+2.5465024
+----CROSS-ENTROPY-2ND PATH----
+2.7100172
+-------------KLD--------------
+5.287437
+-----------KLD-coef-----------
+0.7310585786300049
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.549659
+----CROSS-ENTROPY-2ND-PATH----
+2.6561825
+-------------KLD--------------
+3.8138206
+------------------------------
+source: vad har dina värsta upplevelser varit i sd
+target: vilka har varit dina värsta upplevelser i sd
+valid: om är händer av form wayanad harmonisk </s> vad 144 </s>
+sampled:  vad är de bästa att för
+sampled 2:  vad är de bästa att att
+...........................
+source: vad är några okända saker om narendra modi
+target: narendra modi vilka är de okända fakta om narendra modi
+valid: varför det de usa livet olika konto cnn kan </s> kost
+sampled:  vad är de bästa att att att att att
+sampled 2:  vad är de bästa att att att
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+4500
+--------CROSS-ENTROPY---------
+2.5024996
+----CROSS-ENTROPY-2ND PATH----
+2.5846412
+-------------KLD--------------
+3.2479565
+-----------KLD-coef-----------
+0.8807970779778824
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.569415
+----CROSS-ENTROPY-2ND-PATH----
+2.6282573
+-------------KLD--------------
+2.3764808
+------------------------------
+source: hur kan jag ladda upp profilbild på quora
+target: hur ändrar jag mitt profilfoto här på quora
+valid: hur kan jag bra enkelt presidentskap konto capita </s>
+sampled:  hur kan jag att att att att att
+sampled 2:  hur kan jag att att att att att att
+...........................
+source: hur blir jag snabbare gravid
+target: hur kan jag bli gravid snabbare
+valid: hur människor jag engineering vem på motivationsböckerna </s> </s>
+sampled:  hur kan jag att att att
+sampled 2:  hur kan jag att att att
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+5000
+--------CROSS-ENTROPY---------
+2.4543874
+----CROSS-ENTROPY-2ND PATH----
+2.503613
+-------------KLD--------------
+2.2798262
+-----------KLD-coef-----------
+0.9525741268224333
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.3632553
+----CROSS-ENTROPY-2ND-PATH----
+2.4020126
+-------------KLD--------------
+1.9710484
+------------------------------
+source: vad kommer att hända med de gamla valörerna 500 och 1000
+target: vad kommer att hända med de gamla 500 och 1000 sedlarna i bankerna efter beslutet av herr modi
+valid: vilket är kommer jee att att auckland sidan prova bitars windows </s> </s> </s> </s> </s> själv </s> </s>
+sampled:  vad är det bästa att att att att att att att att att att att
+sampled 2:  vad är det bästa att att att att att att att att att att att att att att
+...........................
+source: vad betyder tåring av festen
+target: vad betyder toe party
+valid: vad är personer av </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s>
+sampled:  vad är den bästa
+sampled 2:  vad är den bästa för
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+5500
+--------CROSS-ENTROPY---------
+2.4343624
+----CROSS-ENTROPY-2ND PATH----
+2.472914
+-------------KLD--------------
+1.8477039
+-----------KLD-coef-----------
+0.9820137900379085
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.4439182
+----CROSS-ENTROPY-2ND-PATH----
+2.4762979
+-------------KLD--------------
+1.8413162
+------------------------------
+source: varför är harley quinn så populär
+target: blir harley quinn mainstream
+valid: är amerikanska bestämmas för på </s> </s> </s> </s>
+sampled:  vad är det bästa för <unk>
+sampled 2:  vad är det bästa <unk>
+...........................
+source: vem kommer att vinna 2016 års amerikanska presidentval varför
+target: vem vinner det amerikanska presidentvalet 2016 och varför
+valid: vad kan jag få support och <unk> indiska </s>
+sampled:  vad är det bästa att <unk>
+sampled 2:  vad är det bästa att att en <unk>
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+6000
+--------CROSS-ENTROPY---------
+2.391289
+----CROSS-ENTROPY-2ND PATH----
+2.4253864
+-------------KLD--------------
+1.6485932
+-----------KLD-coef-----------
+0.9933071490757152
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.4480236
+----CROSS-ENTROPY-2ND-PATH----
+2.4774137
+-------------KLD--------------
+1.4611366
+------------------------------
+source: vad är det bästa sättet att förbättra min talade engelska snart
+target: hur kan jag förbättra mitt engelska uttal
+valid: vad kan ett invandrare att med </s> </s> </s> </s>
+sampled:  vad är det bästa sättet att att lära
+sampled 2:  vad är det bästa sättet att att lära att lära
+...........................
+source: hur lagar du en 13 pund kalkon hur lång tid tar det
+target: hur länge ska jag laga en 12 pund kalkon
+valid: <unk> jag jag få göra människorna svarta relationerna i konto
+sampled:  hur kan jag att en en en vikt
+sampled 2:  hur kan jag få en en en vikt
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+6500
+--------CROSS-ENTROPY---------
+2.3624096
+----CROSS-ENTROPY-2ND PATH----
+2.3930888
+-------------KLD--------------
+1.5864111
+-----------KLD-coef-----------
+0.9975273768433652
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.337539
+----CROSS-ENTROPY-2ND-PATH----
+2.3556755
+-------------KLD--------------
+1.364491
+------------------------------
+source: vad hindrade quora från att förvandlas till yahoo svar
+target: vad som skiljer quora från yahoo svar
+valid: vad är den som engelsktalare är för 2016
+sampled:  vad är de bästa för att att <unk>
+sampled 2:  vad är de bästa för att bästa i <unk>
+...........................
+source: vilka är de enklaste sätten att tjäna bra pengar på internet
+target: hur tjänar jag pengar på internet
+valid: finns är gjorde att med gmail i </s>
+sampled:  vad är det bästa sättet att att lära
+sampled 2:  vad är det bästa sättet att att lära att lära
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+7000
+--------CROSS-ENTROPY---------
+2.3480914
+----CROSS-ENTROPY-2ND PATH----
+2.3730967
+-------------KLD--------------
+1.4814465
+-----------KLD-coef-----------
+0.9990889488055994
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.2795131
+----CROSS-ENTROPY-2ND-PATH----
+2.2951903
+-------------KLD--------------
+1.3447787
+------------------------------
+source: vad tycker du om reportrar utan gränser som placerar indien som nummer 140 på world press freedom index
+target: vad tycker du om indiens avgrundsligt låga ranking i press freedom index
+valid: hur är en vissa open erna i det på qoura hur </s> </s>
+sampled:  vad är de bästa för hantering som hagelgevär i indien
+sampled 2:  vad är de bästa av hantering av hagelgevär och nra och i nra
+...........................
+source: vilka saker måste du göra för att bli skådespelare
+target: vad är det enklaste sättet att bli skådespelare
+valid: jag är det etiska kvalifikationerna android att ut </s> </s> </s> </s> </s>
+sampled:  vad är det bästa sättet att att lära
+sampled 2:  vad är det bästa sättet att att lära
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+7500
+--------CROSS-ENTROPY---------
+2.2834086
+----CROSS-ENTROPY-2ND PATH----
+2.3029423
+-------------KLD--------------
+1.4425886
+-----------KLD-coef-----------
+0.9996646498695335
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.3013253
+----CROSS-ENTROPY-2ND-PATH----
+2.315744
+-------------KLD--------------
+1.2466036
+------------------------------
+source: vad händer efter döden
+target: vad händer med vår kropp efter att vi dör
+valid: vad hittar och en mitt medel 000 fallet </s> </s>
+sampled:  vad är det bästa
+sampled 2:  vad är det bästa för att göra
+...........................
+source: hur hackar människor webbplatser
+target: vad är processen för hacking av webbplatser
+valid: hur är några för att självförtroende väljas </s> </s> </s>
+sampled:  hur kan jag göra min min <unk>
+sampled 2:  hur kan jag förbättra
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+8000
+--------CROSS-ENTROPY---------
+2.2594378
+----CROSS-ENTROPY-2ND PATH----
+2.2770824
+-------------KLD--------------
+1.4200048
+-----------KLD-coef-----------
+0.9998766054240138
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.3356776
+----CROSS-ENTROPY-2ND-PATH----
+2.3537862
+-------------KLD--------------
+1.3877575
+------------------------------
+source: betalar hillary clinton i hemlighet donald trump för att kasta valet
+target: kan donald trump vara en växt
+valid: kan vad einsteins var donald varit </s> </s> </s> </s> </s> </s> </s> </s>
+sampled:  varför är det att att <unk> i <unk> i indien
+sampled 2:  varför är det <unk> att att <unk> i <unk>
+...........................
+source: vilka är nya funktioner i ubuntu 16 04 jämfört med 15 10
+target: vilka är de bästa nya funktionerna i ubuntu 16 04 lts xenial xerus
+valid: vad är är fantastiska beslutet <unk> i jämförde medeltemperaturen besöka </s> </s> självmord </s>
+sampled:  vilka är de bästa för hantering i hagelgevär i indien
+sampled 2:  vilka är de bästa <unk> för att <unk> i indien
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+8500
+--------CROSS-ENTROPY---------
+2.2595308
+----CROSS-ENTROPY-2ND PATH----
+2.278874
+-------------KLD--------------
+1.4694729
+-----------KLD-coef-----------
+0.9999546021312975
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.1826453
+----CROSS-ENTROPY-2ND-PATH----
+2.2011762
+-------------KLD--------------
+1.3783656
+------------------------------
+source: finns det verkligen ett chip inbäddat i den nya rupees 2000 sedeln
+target: har nya 2000 inr verkligen en ngc nano gps chip eller är det bara ett rykte
+valid: daniel du anställa många anteckningarna som 1000 på lektionen 500 miljoner djur dem bästa vanliga jag kan
+sampled:  vad är den bästa att att förbjuda i 500 och 1000 och 1000
+sampled 2:  vad är den bästa att att förbjuda i 500 och 1000 och 1000
+...........................
+source: varför fungerar inte spotify i indien
+target: hur mycket tid tar spotify att landa i indien
+valid: eftersom kommer jag någon själv i röster </s> mitt </s> </s> </s> </s> </s> </s> </s> </s>
+sampled:  varför är det bästa att att göra i en <unk>
+sampled 2:  varför är det bästa att att få en <unk>
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+9000
+--------CROSS-ENTROPY---------
+2.2002823
+----CROSS-ENTROPY-2ND PATH----
+2.2182887
+-------------KLD--------------
+1.3907663
+-----------KLD-coef-----------
+0.9999832985781518
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.2333918
+----CROSS-ENTROPY-2ND-PATH----
+2.255072
+-------------KLD--------------
+1.4204824
+------------------------------
+source: vilken är den bästa touringcykeln under 3 lakh i indien
+target: vilken är den bästa turcykeln i indien
+valid: vad är de bästa okända sångerna som </s> </s> </s> </s> </s> </s> </s>
+sampled:  vilka är de bästa bästa för att besöka i indien
+sampled 2:  vilka är de bästa bästa för att besöka i indien
+...........................
+source: hur ansöker jag om ett pan kort online
+target: hur kan jag ansöka om pan kort och vilka dokument behöver vi använda
+valid: hur demonstrationen jag göra min min med till doktorander är en </s> </s> </s>
+sampled:  hur kan jag få en <unk> på en <unk>
+sampled 2:  hur kan jag få en <unk> i quora
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+9500
+--------CROSS-ENTROPY---------
+2.1774287
+----CROSS-ENTROPY-2ND PATH----
+2.1959798
+-------------KLD--------------
+1.3938023
+-----------KLD-coef-----------
+0.9999938558253978
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.0943542
+----CROSS-ENTROPY-2ND-PATH----
+2.1097589
+-------------KLD--------------
+1.460588
+------------------------------
+source: vad är det galnaste som din flickvän gjorde för dig
+target: vad är det galnaste som din flickvän har gjort för dig
+valid: vad är du idag frågan en någonsin för att erna </s> </s>
+sampled:  vad är det bästa du du du har du har det
+sampled 2:  vad är det bästa du du du har har har en ditt
+...........................
+source: hur bestäms ett atomnummer
+target: hur kan du hitta ett atomnummer
+valid: skulle kan man sa kvinnor någon </s> </s> </s> </s> </s> </s>
+sampled:  hur kan jag bli en <unk>
+sampled 2:  hur kan jag bli en <unk>
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+10000
+--------CROSS-ENTROPY---------
+2.1583369
+----CROSS-ENTROPY-2ND PATH----
+2.1785092
+-------------KLD--------------
+1.4047446
+-----------KLD-coef-----------
+0.999997739675702
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.0462394
+----CROSS-ENTROPY-2ND-PATH----
+2.0685573
+-------------KLD--------------
+1.1458514
+------------------------------
+source: hur tänker amerikanerna på edward snowden
+target: vad tycker amerikanerna om edward snowden
+valid: hur gör trump en kultur </s> </s> </s> </s> </s> </s> </s> </s> </s> </s>
+sampled:  hur kan jag bli <unk> i <unk>
+sampled 2:  hur kan jag få <unk> i <unk>
+...........................
+source: varför är min fråga markerad som behöver förbättras
+target: hur pratar jag med moderatorerna som markerade mina frågor som behöver förbättras i quora
+valid: hur minskar du pm senaste är på är </s> </s> försöker dör </s> bra </s>
+sampled:  varför är det bästa att att få en en <unk> som en en <unk>
+sampled 2:  varför är det bästa att att få en <unk>
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+10500
+--------CROSS-ENTROPY---------
+2.1342525
+----CROSS-ENTROPY-2ND PATH----
+2.1544328
+-------------KLD--------------
+1.3998268
+-----------KLD-coef-----------
+0.9999991684719723
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.121378
+----CROSS-ENTROPY-2ND-PATH----
+2.1373315
+-------------KLD--------------
+1.2781911
+------------------------------
+source: vilken betydelse har nyckelord i seo
+target: varför är seo
+valid: vilka telefon tumblr sätt </s> </s> </s> </s> </s> </s> </s>
+sampled:  vilka är de bästa böckerna för att lära sig
+sampled 2:  vilka är de bästa <unk> för att lära sig
+...........................
+source: vilka är de bästa böckerna för ssc cgl
+target: vilka är några bra böcker för att förbereda ssc cgl
+valid: vilka är de vägen ställena </s> starta ha sig </s> </s>
+sampled:  vilka är de bästa böckerna för att lära sig i vikt
+sampled 2:  vilka är de bästa bästa att besöka
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+11000
+--------CROSS-ENTROPY---------
+2.1051202
+----CROSS-ENTROPY-2ND PATH----
+2.1242373
+-------------KLD--------------
+1.4034245
+-----------KLD-coef-----------
+0.9999996940977731
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.0805924
+----CROSS-ENTROPY-2ND-PATH----
+2.0969136
+-------------KLD--------------
+1.3479751
+------------------------------
+source: hur kan jag specifikt förbättra min engelska
+target: hur kan jag förbättra mitt engelska språk
+valid: har jag ett förbättra cv vikt under </s>
+sampled:  hur kan jag tjäna mig att jag min min vikt
+sampled 2:  hur kan jag förbättra min min vikt
+...........................
+source: vad är telefonnummer för quickbooks tekniska support i new york
+target: vilket är det bästa quickbooks tekniska supportnumret
+valid: vad är den mest i kemiska i </s>
+sampled:  vad är den bästa <unk> i indien
+sampled 2:  vad är den bästa <unk> i indien i indien
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+11500
+--------CROSS-ENTROPY---------
+2.0958374
+----CROSS-ENTROPY-2ND PATH----
+2.115312
+-------------KLD--------------
+1.3870162
+-----------KLD-coef-----------
+0.9999998874648379
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.1709402
+----CROSS-ENTROPY-2ND-PATH----
+2.191313
+-------------KLD--------------
+1.2963384
+------------------------------
+source: varför föredrar jag quora
+target: varför ska jag föredra quora
+valid: varför chrome jag ett min </s> </s> </s> </s>
+sampled:  varför är det bästa att att förbättra
+sampled 2:  varför är det bästa att att lära sig
+...........................
+source: vilken är den bästa vägen jag ska ta för att förbättra min engelska
+target: vad är det bästa sättet att förbättra engelska
+valid: vilken är din bästa gammal att lära jobbet efter
+sampled:  vilka är de bästa sätten att lära sig att lära sig
+sampled 2:  vilka är de bästa sätten att lära sig att lära sig i vikt
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+12000
+--------CROSS-ENTROPY---------
+2.0535018
+----CROSS-ENTROPY-2ND PATH----
+2.071561
+-------------KLD--------------
+1.3894897
+-----------KLD-coef-----------
+0.9999999586006245
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.0852017
+----CROSS-ENTROPY-2ND-PATH----
+2.0989456
+-------------KLD--------------
+1.3533547
+------------------------------
+source: vad är den matematiska bakgrunden som krävs för konkurrenskraftig programmering
+target: vilka ämnen i matematik behöver jag studera för att börja med konkurrenskraftig programmering
+valid: vad är är den visste innehåll pojke är har världen att dina kerala varför </s> </s>
+sampled:  vad är den bästa <unk> för att en en <unk>
+sampled 2:  vad är den bästa <unk> för en <unk>
+...........................
+source: hur kommer förbudet mot rs 500 och rs 1000 sedlar att påverka olika klasser av människor
+target: vad kommer att bli konsekvensen av att förbjuda 500 1000 rs på fattiga och medelklass
+valid: hur tycker förbud konsekvenserna information att modis förbjuda 1000 att kr 1000 500 och rostov ekonomin
+sampled:  hur kommer förbudet av 500 och 1000 och 1000 och 1000 sedlar och att begränsa svarta
+sampled 2:  hur kommer förbudet av 500 och 1000 och 1000 och 1000 och 1000
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+12500
+--------CROSS-ENTROPY---------
+2.0717864
+----CROSS-ENTROPY-2ND PATH----
+2.091002
+-------------KLD--------------
+1.4412346
+-----------KLD-coef-----------
+0.9999999847700205
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.096869
+----CROSS-ENTROPY-2ND-PATH----
+2.1118453
+-------------KLD--------------
+1.3025806
+------------------------------
+source: självförbättring hur kan jag motivera mig att arbeta hårt
+target: hur motiverar du dig själv att arbeta hårt
+valid: hur kan jag mig bra att jag älskar det </s> </s>
+sampled:  hur kan jag lära mig mig att jag sig mig
+sampled 2:  hur kan jag lära mig mig mig
+...........................
+source: vad orsakade det romerska rikets fall hur skulle världen vara om de fortfarande fanns kvar
+target: vilka var de viktigaste orsakerna till det romerska imperiets fall
+valid: vilka är minst viktigaste som beslut man händer där en 2017
+sampled:  vad är skillnaden mellan en <unk> och hur jämförs det med de
+sampled 2:  vad är skillnaden mellan en <unk> och hur jämförs det med de <unk>
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+13000
+--------CROSS-ENTROPY---------
+2.0096655
+----CROSS-ENTROPY-2ND PATH----
+2.0263324
+-------------KLD--------------
+1.3992072
+-----------KLD-coef-----------
+0.9999999943972036
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+2.1735435
+----CROSS-ENTROPY-2ND-PATH----
+2.189136
+-------------KLD--------------
+1.5806489
+------------------------------
+source: vilken påverkan skulle världskrig 3 ha om det skulle hända
+target: varför tror du att världskrig 3 kommer att hända jag tror personligen att det inte kommer att göra det
+valid: vad sa har led vara av än 2020 har skulle premiärminister om till sista cpu detta i ett pengar en
+sampled:  vad är det största <unk> som har har en <unk> och hur är det
+sampled 2:  vad är skillnaden mellan en <unk> och quot
+...........................
+source: vad är din favoritklädaffär
+target: vilka är dina favoritklädbutiker och varför
+valid: vad är fördelarna av </s> en </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s>
+sampled:  vad är det bästa <unk>
+sampled 2:  vad är det bästa <unk>
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+13500
+--------CROSS-ENTROPY---------
+2.0013564
+----CROSS-ENTROPY-2ND PATH----
+2.0182047
+-------------KLD--------------
+1.375697
+-----------KLD-coef-----------
+0.9999999979388463
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.9914633
+----CROSS-ENTROPY-2ND-PATH----
+2.0023828
+-------------KLD--------------
+1.3361413
+------------------------------
+source: hur förlorar jag fett och övervikt från kroppen
+target: hur går jag ner i vikt från 58 till 50 kg
+valid: hur kan vi bli och forskarskolan datavetenskapens dagar bättre vilka hårbotten </s>
+sampled:  hur kan jag få en <unk> i <unk>
+sampled 2:  hur kan jag få en <unk> och <unk>
+...........................
+source: hur lägger jag till ämnen i en fråga om quora
+target: hur lägger jag till ämnen
+valid: hur säger du resonemang morgonen efter </s> </s> </s> </s> </s> </s>
+sampled:  hur kan jag få en en fråga på quora
+sampled 2:  hur kan jag få en <unk> på quora
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+14000
+--------CROSS-ENTROPY---------
+1.969881
+----CROSS-ENTROPY-2ND PATH----
+1.9867018
+-------------KLD--------------
+1.379272
+-----------KLD-coef-----------
+0.9999999992417439
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.9442749
+----CROSS-ENTROPY-2ND-PATH----
+1.9626776
+-------------KLD--------------
+1.5742029
+------------------------------
+source: varför köper verizon yahoo
+target: varför förvärvade verizon yahoo
+valid: hur oralsex ett area pengar </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s>
+sampled:  varför är det bästa att att få en <unk>
+sampled 2:  varför är den bästa <unk> för att köpa pengar
+...........................
+source: hur kan jag gå ner i vikt efter äktenskapet
+target: vilka är de bästa sätten att gå ner i vikt vad är den bästa dietplanen
+valid: hur är sätten bästa sätten att förbättra ner ner vikt på är bästa bästa att </s>
+sampled:  hur kan jag tjäna pengar i vikt
+sampled 2:  hur kan jag gå ner i vikt
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+14500
+--------CROSS-ENTROPY---------
+1.9656148
+----CROSS-ENTROPY-2ND PATH----
+1.9825782
+-------------KLD--------------
+1.3944696
+-----------KLD-coef-----------
+0.9999999997210531
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.9528744
+----CROSS-ENTROPY-2ND-PATH----
+1.9668179
+-------------KLD--------------
+1.1843526
+------------------------------
+source: hur kan jag vara engelska som modersmål
+target: hur kunde jag förbättra mitt engelska uttal
+valid: kan blir du mitt in företag kampsporten </s> </s>
+sampled:  hur kan jag bli en bra i en tjej
+sampled 2:  hur kan jag bli en bra <unk>
+...........................
+source: är servicedesk i tcs bra eller inte
+target: är en servicedesk i tcs bra eller inte
+valid: finns det annan vad än rupiesedel i för en
+sampled:  är det möjligt att vara en <unk>
+sampled 2:  är det möjligt att vara en <unk>
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+15000
+--------CROSS-ENTROPY---------
+1.9582183
+----CROSS-ENTROPY-2ND PATH----
+1.9752302
+-------------KLD--------------
+1.3997836
+-----------KLD-coef-----------
+0.9999999998973812
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.9079014
+----CROSS-ENTROPY-2ND-PATH----
+1.9223782
+-------------KLD--------------
+1.4953169
+------------------------------
+source: varför bär även långa kvinnor klackar vad är behovet av höjd överhuvudtaget
+target: varför bär höga tjejer höga klackar
+valid: varför är automatiserad julian och påstådda en </s> </s> </s> </s> </s>
+sampled:  varför är <unk> så de flesta <unk> som jorden
+sampled 2:  varför är <unk> så de flesta <unk> som de flesta <unk>
+...........................
+source: varför tror vissa människor fortfarande att jorden är platt
+target: varför finns det fortfarande människor som tror att världen är platt
+valid: varför folk land verkligen efter och övernaturliga existera upphäva quot en som
+sampled:  varför är det att att vara <unk> som är fallet som att vara <unk>
+sampled 2:  varför är <unk> så de flesta <unk>
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+15500
+--------CROSS-ENTROPY---------
+1.9142232
+----CROSS-ENTROPY-2ND PATH----
+1.9307986
+-------------KLD--------------
+1.3778318
+-----------KLD-coef-----------
+0.9999999999622486
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.9494953
+----CROSS-ENTROPY-2ND-PATH----
+1.9657713
+-------------KLD--------------
+1.2779804
+------------------------------
+source: vad människor med enorma summor svarta pengar kommer att göra efter dagens djärva beslut av premiärminister narendra modi att förbjuda 500 och 1000 sedlar
+target: hur hanterar människor svarta pengar på grund av förbudet mot 500 och 1000 rupier
+valid: vad kommer skulle förbud modis att modis och rs och att till 1000 dokument </s>
+sampled:  vad tycker du om att förbjuda 500 och 1000 rupier och 1000 rupier
+sampled 2:  vad tycker du om att förbjuda 500 och 1000 rupier och 1000 rupier
+...........................
+source: mellan trump och clinton vem vinner usa s presidentval
+target: vem tror du vinner presidentvalet 2016
+valid: vem skiljer du bort grader </s> </s> </s> </s> </s> </s> </s> </s> </s> </s>
+sampled:  vad är skillnaden mellan donald trump trump
+sampled 2:  vad är skillnaden mellan att donald trump
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+16000
+--------CROSS-ENTROPY---------
+1.9172723
+----CROSS-ENTROPY-2ND PATH----
+1.9338982
+-------------KLD--------------
+1.3933488
+-----------KLD-coef-----------
+0.999999999986112
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.7962029
+----CROSS-ENTROPY-2ND-PATH----
+1.8085703
+-------------KLD--------------
+1.334063
+------------------------------
+source: hur ändrar jag mitt profilfoto här på quora
+target: hur kan jag ladda upp profilbild på quora
+valid: på kan jag förbättra att facebook från quora </s> </s> </s>
+sampled:  hur kan jag få en fråga på quora
+sampled 2:  hur kan jag få en fråga på quora
+...........................
+source: kan långväga relationer träna
+target: hur kan jag upprätthålla min långväga relation efter bästa förmåga
+valid: hur händer jag stoppa <unk> matematik hastighet </s> gruppdiskussioner </s> marknadsföring
+sampled:  hur kan jag bli min <unk>
+sampled 2:  hur kan jag bli min <unk>
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+16500
+--------CROSS-ENTROPY---------
+1.9189392
+----CROSS-ENTROPY-2ND PATH----
+1.9363422
+-------------KLD--------------
+1.4265991
+-----------KLD-coef-----------
+0.999999999994891
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.8758354
+----CROSS-ENTROPY-2ND-PATH----
+1.889117
+-------------KLD--------------
+1.2805289
+------------------------------
+source: vilken musik gillar du bäst
+target: vilken typ av musik älskar du
+valid: vilken är quot bäst </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s>
+sampled:  vilka är de bästa böckerna att läsa sig
+sampled 2:  vilka är de bästa böckerna för att lära sig
+...........................
+source: jag märkte av misstag någon på en väns foto men jag raderade taggen kommer någon av dem fortfarande att få ett meddelande
+target: får någon ett meddelande om du tar bort en bild som du har lagt upp med dem taggade i den
+valid: hur tycker bli arbete för <unk> har jag att <unk> och att är fortfarande själv ett en planeten </s> mitt vintergatan
+sampled:  hur kan jag få en fråga på quora som är några att jag få en fråga
+sampled 2:  hur kan jag få en fråga på quora
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+17000
+--------CROSS-ENTROPY---------
+1.9035243
+----CROSS-ENTROPY-2ND PATH----
+1.9205942
+-------------KLD--------------
+1.4012374
+-----------KLD-coef-----------
+0.9999999999981204
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.9013408
+----CROSS-ENTROPY-2ND-PATH----
+1.9131639
+-------------KLD--------------
+1.1283314
+------------------------------
+source: jag vill veta att folk kontrollerar min whatsapp profil
+target: är det möjligt att veta om någon såg min whatsapp profil
+valid: när det fanns att göra min min gjort motiverad kändis kontolista </s>
+sampled:  hur kan jag få min fråga på min webbplats
+sampled 2:  hur kan jag få min fråga på min webbplats
+...........................
+source: spolar mjölk metan ur ditt system
+target: hur kan jag späda meth ut ur mitt system
+valid: kan skulle vi bli tidigare till och lord olympiska </s> </s> </s>
+sampled:  varför är det att att få <unk> i indien
+sampled 2:  varför är <unk> att vara <unk> i indien
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+17500
+--------CROSS-ENTROPY---------
+1.886155
+----CROSS-ENTROPY-2ND PATH----
+1.903457
+-------------KLD--------------
+1.4253477
+-----------KLD-coef-----------
+0.9999999999993086
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.9147017
+----CROSS-ENTROPY-2ND-PATH----
+1.9301516
+-------------KLD--------------
+1.4936205
+------------------------------
+source: hur kan jag bli känd en dag
+target: hur blir jag känd
+valid: hur kom jag i i </s> </s> </s> </s> </s> </s>
+sampled:  hur kan jag bli en bra
+sampled 2:  hur kan jag bli en tjej
+...........................
+source: hur kan en introvert förändras till en extrovert
+target: kan en person byta från att vara introvert till extrovert
+valid: hur vi förhindra karriär en en månader min med rik </s>
+sampled:  hur kan jag bli en <unk> på en <unk>
+sampled 2:  hur kan jag bli en <unk>
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+18000
+--------CROSS-ENTROPY---------
+1.8540254
+----CROSS-ENTROPY-2ND PATH----
+1.8708874
+-------------KLD--------------
+1.4283662
+-----------KLD-coef-----------
+0.9999999999997456
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.8689839
+----CROSS-ENTROPY-2ND-PATH----
+1.8860039
+-------------KLD--------------
+1.488275
+------------------------------
+source: vad är det nya verktyget för automatiseringstest
+target: vad är ett bra testverktyg för mobil automation som är fritt tillgängligt
+valid: vad är några främsta för om att 2017 anteckningar bekämpa tentor medlem till
+sampled:  vad är den bästa <unk> för att göra en <unk>
+sampled 2:  vad är den bästa <unk> för att göra sig
+...........................
+source: när blir nästa sbi it examensexamen
+target: när är sbi s it examen
+valid: använder ska <unk> så välsignelse erektioner för </s> </s> </s> </s> </s> </s>
+sampled:  kan jag få en <unk> i <unk>
+sampled 2:  kan en <unk> <unk> i indien
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+18500
+--------CROSS-ENTROPY---------
+1.8370228
+----CROSS-ENTROPY-2ND PATH----
+1.8526502
+-------------KLD--------------
+1.408312
+-----------KLD-coef-----------
+0.9999999999999064
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.8373578
+----CROSS-ENTROPY-2ND-PATH----
+1.8480883
+-------------KLD--------------
+1.1993082
+------------------------------
+source: vilka är de säkerhetsåtgärder för hantering av hagelgevär som nra föreslår i arizona
+target: vilka är de säkerhetsåtgärder för hantering av hagelgevär som nra föreslår i illinois
+valid: vilka är det säkerhetsåtgärder som hantering av hagelgevär som nra föreslår </s> maskinteknik </s> </s>
+sampled:  vilka är de säkerhetsåtgärder för hantering av hagelgevär som nra föreslår i north
+sampled 2:  vilka är de säkerhetsåtgärder för hantering av hagelgevär som nra föreslår i north
+...........................
+source: hur skulle demonisering av 500 och 1000 rupeesedelar och införande av nya 2000 rupeesedelar hjälpa till att begränsa svarta pengar och korruption
+target: hur kommer de nya sedlarna i valör 500 och 2000 att begränsa svarta pengar
+valid: har förbud pm senaste 2000 beslutet rs och och rs sedlar använda 500 500 modi
+sampled:  hur kommer förbudet av 500 och 1000 rupier att hjälpa till att begränsa svarta pengar
+sampled 2:  hur kommer förbudet av 500 och 1000 rupier att hjälpa svarta pengar och korruption
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+19000
+--------CROSS-ENTROPY---------
+1.8243494
+----CROSS-ENTROPY-2ND PATH----
+1.8400707
+-------------KLD--------------
+1.405716
+-----------KLD-coef-----------
+0.9999999999999656
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.920974
+----CROSS-ENTROPY-2ND-PATH----
+1.9475498
+-------------KLD--------------
+1.3019459
+------------------------------
+source: hur skulle det vara att bo på mars
+target: vill du bo på mars
+valid: hur sömnapn i bildar än går </s> </s>
+sampled:  hur är det att vara en <unk>
+sampled 2:  hur känns det att vara en en person
+...........................
+source: hur torkar du koriander
+target: vad är några sätt att torka koriander
+valid: hur håller det vänner om komma världen </s>
+sampled:  hur kan jag bli en <unk>
+sampled 2:  hur kan jag bli min <unk>
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+19500
+--------CROSS-ENTROPY---------
+1.8130901
+----CROSS-ENTROPY-2ND PATH----
+1.8294175
+-------------KLD--------------
+1.4077684
+-----------KLD-coef-----------
+0.9999999999999873
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.8678381
+----CROSS-ENTROPY-2ND-PATH----
+1.8824955
+-------------KLD--------------
+1.3947198
+------------------------------
+source: hur hjälper förbud mot 500 och 1000 rupiesedelar att kontrollera svarta pengar
+target: hur kommer de nya sedlarna i valör 500 och 2000 att begränsa svarta pengar
+valid: mycket hjälper jag bästa bärbara under 500 och ett 1000 att skapa svarta dem </s>
+sampled:  hur kommer förbudet av 500 och 1000 rupier att hjälpa svarta pengar
+sampled 2:  hur kommer förbudet av 500 och 1000 rupier att hjälpa svarta pengar
+...........................
+source: har donald trump narcissistisk personlighetsstörning
+target: har trump narcissistisk personlighetsstörning
+valid: kan donald trump saiyan </s> </s> </s> </s> </s> </s> </s> </s> </s> </s> </s>
+sampled:  vem är donald trump
+sampled 2:  vem vinner donald trump
+...........................
+
+
+------------TRAIN-------------
+----------ITERATION-----------
+20000
+--------CROSS-ENTROPY---------
+1.8045579
+----CROSS-ENTROPY-2ND PATH----
+1.8223611
+-------------KLD--------------
+1.457263
+-----------KLD-coef-----------
+0.9999999999999953
+------------------------------
+
+
+------------VALID-------------
+--------CROSS-ENTROPY---------
+1.7594049
+----CROSS-ENTROPY-2ND-PATH----
+1.776202
+-------------KLD--------------
+1.3967755
+------------------------------
+source: om du hade makten att ändra bara en sak i ditt förflutna vad skulle det vara
+target: om du kunde ändra något från ditt förflutna vad skulle det vara
+valid: om du kunde någon en på det 39 och astrologer du dem eller
+sampled:  om du kunde en person i en person och en <unk>
+sampled 2:  om du kunde en person i en person
+...........................
+source: om du begår självmord går du till helvetet
+target: kommer jag att gå till helvetet om jag begår självmord
+valid: ska vi sent träffa dig ett i din </s> mig men </s> </s>
+sampled:  kan du bli gravid om jag är kär
+sampled 2:  kan du bli gravid
+...........................
+4000 sentences loaded from quora_test.
+Vocab size : 53843
+0
+source :  är det möjligt att donald trump kamperar mycket dåligt quot avsiktligt quot för att hillary clinton kan vinna
+target :  använde hillary clinton donald trump som ett sätt att inte ha någon relevant politisk motståndare
+sampled :   är det sant att donald trump om donald trump om donald trump
+sampled 2:   är det sant att donald trump trump trump
+1000
+source :  hur kunde jag förbättra mitt engelska uttal
+target :  hur kan jag öka min engelska flyt
+sampled :   hur kan jag förbättra min engelska
+sampled 2:   hur kan jag förbättra min engelska
+2000
+source :  vilka ämnen kommer i kvpy 2016 sa ström från alla de fyra ämnena
+target :  vilka ämnen kommer i kvpy 2016
+sampled :   vilka är några av de bästa <unk> mellan <unk>
+sampled 2:   vilka är några av de bästa skillnaderna mellan <unk> och västerländska
+3000
+source :  hur ska elon musk vara ingenjör
+target :  hur kan elon musk kalla sig ingenjör
+sampled :   hur kan jag bli <unk> och <unk>
+sampled 2:   hur kan en <unk> <unk>
