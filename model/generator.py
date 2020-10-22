@@ -178,7 +178,7 @@ class Generator(nn.Module):
     #
     #     return validate
 
-    def sample_with_input(self, batch_loader, seq_len, use_cuda, use_mean, input):
+    def sample_with_input(self, batch_loader, seq_len, use_cuda, use_mean, input, input_only=False):
         [encoder_input_source, encoder_input_target, decoder_input_source, _, _] = input
 
         encoder_input = [encoder_input_source, encoder_input_target]
@@ -186,7 +186,10 @@ class Generator(nn.Module):
         # encode
         [batch_size, _, _] = encoder_input[0].size()
 
-        mu, logvar = self.encoder(encoder_input[0], encoder_input[1])
+        if input_only:
+            mu, logvar = self.encoder(encoder_input[0], None)
+        else:
+            mu, logvar = self.encoder(encoder_input[0], encoder_input[1])
         std = t.exp(0.5 * logvar)
 
         if use_mean:
@@ -284,10 +287,10 @@ class Generator(nn.Module):
 
 
 
-    def sample_with_pair(self, batch_loader, seq_len, use_cuda, source_sent, target_sent):
+    def sample_with_pair(self, batch_loader, seq_len, use_cuda, source_sent, target_sent, input_only=False):
         input = batch_loader.input_from_sentences([[source_sent], [target_sent]])
         input = [var.cuda() if use_cuda else var for var in input]
-        return self.sample_with_input(batch_loader, seq_len, use_cuda, False, input)
+        return self.sample_with_input(batch_loader, seq_len, use_cuda, False, input, input_only)
 
     def sample_with_seed(self, batch_loader, seq_len, use_cuda, seed):
         pass
