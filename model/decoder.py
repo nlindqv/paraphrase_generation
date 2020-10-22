@@ -12,16 +12,16 @@ class Decoder(nn.Module):
                                        hidden_size=self.params.encoder_rnn_size,
                                        num_layers=self.params.encoder_num_layers,
                                        batch_first=True,
-                                       bidirectional=True) 
-        
+                                       bidirectional=True)
+
         self.decoding_rnn = nn.LSTM(input_size=self.params.latent_variable_size
                                         + self.params.word_embed_size,
                                        hidden_size=self.params.decoder_rnn_size,
                                        num_layers=self.params.decoder_num_layers,
                                        batch_first=True)
-        self.h_to_initial_state = nn.Linear(self.params.encoder_rnn_size * 2, 
+        self.h_to_initial_state = nn.Linear(self.params.encoder_rnn_size * 2,
             self.params.decoder_num_layers * self.params.decoder_rnn_size)
-        self.c_to_initial_state = nn.Linear(self.params.encoder_rnn_size * 2, 
+        self.c_to_initial_state = nn.Linear(self.params.encoder_rnn_size * 2,
             self.params.decoder_num_layers * self.params.decoder_rnn_size)
 
         self.fc = nn.Linear(self.params.decoder_rnn_size, self.params.vocab_size)
@@ -36,15 +36,15 @@ class Decoder(nn.Module):
         [h_state, c_state] = cell_state
         h_state = h_state.view(self.params.encoder_num_layers, 2, batch_size, self.params.encoder_rnn_size)[-1]
         c_state = c_state.view(self.params.encoder_num_layers, 2, batch_size, self.params.encoder_rnn_size)[-1]
-        
+
         # with shapes (batch, 2 * encoder_rnn_size)
         h_state = h_state.permute(1,0,2).contiguous().view(batch_size, -1)
         c_state = c_state.permute(1,0,2).contiguous().view(batch_size, -1)
-        
-        # shapes (num_layers, batch, decoder_rnn_size)        
-        h_initial = self.h_to_initial_state(h_state).view(batch_size, 
+
+        # shapes (num_layers, batch, decoder_rnn_size)
+        h_initial = self.h_to_initial_state(h_state).view(batch_size,
             self.params.decoder_num_layers, self.params.decoder_rnn_size).permute(1,0,2).contiguous()
-        c_initial = self.c_to_initial_state(c_state).view(batch_size, 
+        c_initial = self.c_to_initial_state(c_state).view(batch_size,
             self.params.decoder_num_layers, self.params.decoder_rnn_size).permute(1,0,2).contiguous()
 
         return (h_initial, c_initial)
@@ -62,14 +62,14 @@ class Decoder(nn.Module):
                     with shape of [batch_size, seq_len, vocab_size]
                  final rnn state with shape of [num_layers, batch_size, decoder_rnn_size]
         """
-        
+
         if initial_state is None:
             # build initial context with source input.
             assert not encoder_input is None
             initial_state = self.build_initial_state(encoder_input)
 
         [batch_size, seq_len, _] = decoder_input.size()
-
+        # print(f'Decoder input size (batch_size, seq_len, _): {decoder_input.size()}')
         # print(initial_state[0].size())
         '''
             decoder rnn is conditioned on context via additional bias = W_cond * z to every input token

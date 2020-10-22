@@ -209,6 +209,11 @@ class BatchLoader:
         ix = np.argmax(distribution.ravel())
         return self.idx_to_word[ix]
 
+    def likely_words_from_distribution(self, distribution):
+        assert distribution.shape[-1] == self.vocab_size
+        ixs = np.argmax(distribution, axis=1)
+        return [self.idx_to_word[ix] for ix in ixs]
+
     def get_onehot_vocab(self, ids):
         batch_size = len(ids)
         max_seq_len = np.max([len(x) for x in ids])
