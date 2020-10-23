@@ -60,9 +60,13 @@ def trainer(discriminator, generator, rollout, d_optimizer, g_optimizer, batch_l
 
         gen_samples = batch_loader.embed_batch(samples)
         gen_samples = t.Tensor(gen_samples)
+        if use_cuda:
+            gen_samples = gen_samples.cuda()
 
         rewards = rollout.reward(gen_samples, 8, input, use_cuda, batch_loader)
         rewards = Variable(t.tensor(rewards))
+        if use_cuda:
+            rewards = rewards.cuda()
         neg_lik = F.cross_entropy(logits[0], target, size_average=False, reduce=False)
 
         dg_loss = t.mean(neg_lik * rewards.flatten())
