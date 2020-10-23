@@ -235,6 +235,8 @@ if __name__ == "__main__":
 
     print(f'Initiate rollout...')
     rollout = Rollout(generator, discriminator, 0.8)
+    if use_cuda:
+        rllout = rollout.cuda()
 
     # g_criterion = nn.CrossEntropyLoss()
     # d_criterion = nn.BCEWithLogitsLoss()
