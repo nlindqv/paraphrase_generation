@@ -50,6 +50,65 @@ def trainer(generator, optimizer, batch_loader):
 
     return train
 
+def validater(generator, batch_loader):
+    def get_samples(logits, target):
+        '''
+        logits: [batch, seq_len, vocab_size]
+        targets: [batch, seq_len]
+        '''
+        prediction = F.softmax(logits, dim=-1).data.cpu().numpy()
+
+        target = target.data.cpu().numpy()
+
+        sampled, expected = [], []
+        for i in range(prediction.shape[0]):
+            sampled  += [' '.join([batch_loader.sample_word_from_distribution(d)
+                for d in prediction[i]])]
+            expected += [' '.join([batch_loader.get_word_by_idx(idx) for idx in target[i]])]
+
+        return sampled, expected
+
+    def validate(batch_size, use_cuda, need_samples=False):
+        if need_samples:
+            input, sentences = batch_loader.next_batch(batch_size, 'test', return_sentences=True)
+            sentences = [[' '.join(s) for s in q] for q in sentences]
+        else:
+            input = batch_loader.next_batch(batch_size, 'test')
+
+        input = [var.cuda() if use_cuda else var for var in input]
+
+        [encoder_input_source,
+         encoder_input_target,
+         decoder_input_source,
+         decoder_input_target, target] = input
+
+        (logits, logits2), _, kld = generator(0., (encoder_input_source, encoder_input_target),
+                                (decoder_input_source, decoder_input_target),
+                                z=None, use_cuda=use_cuda)
+
+
+
+        if need_samples:
+            [s1, s2] = sentences
+            sampled, _ = get_samples(logits, target)
+        else:
+            s1, s2 = (None, None)
+            sampled, _ = (None, None)
+
+
+        target = target.view(-1)
+
+        cross_entropy, cross_entropy2 = [], []
+
+        logits = logits.view(-1, generator.params.vocab_size)
+        cross_entropy = F.cross_entropy(logits, target)
+
+        logits2 = logits2.view(-1, generator.params.vocab_size)
+        cross_entropy2 = F.cross_entropy(logits2, target)
+
+        return (cross_entropy, cross_entropy2), kld, (sampled, s1, s2)
+
+    return validate
 
 if __name__ == "__main__":
     print(sys.getdefaultencoding())
@@ -108,13 +167,13 @@ if __name__ == "__main__":
 
 
     if args.use_cuda:
-        paraphraser = paraphraser.cuda()
+        generator = generator.cuda()
 
-    optimizer = Adam(paraphraser.learnable_parameters(), args.learning_rate,
+    optimizer = Adam(generator.learnable_parameters(), args.learning_rate,
         weight_decay=args.weight_decay)
 
-    train_step = trainer(paraphraser, optimizer, batch_loader)
-    validate = paraphraser.validater(batch_loader)
+    train_step = trainer(generator, optimizer, batch_loader)
+    validate = generator.validater(batch_loader)
 
     for iteration in range(args.num_iterations):
 
