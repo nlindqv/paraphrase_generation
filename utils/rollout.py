@@ -45,6 +45,9 @@ class Rollout(object):
 					rewards[l-1] += reward
 
 			# reward = F.sigmoid(self.discriminator(x))
+			if use_cuda:
+				x = x.cuda()
+				
 			reward = self.discriminator(x)
 			reward = reward.data.cpu().numpy()
 			if i == 0:
