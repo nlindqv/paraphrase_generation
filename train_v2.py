@@ -6,13 +6,16 @@ import sys
 import numpy as np
 import torch as t
 from torch.optim import Adam
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.autograd import Variable
 
 import sample
 from utils.batch_loader import BatchLoader
-from model.parameters import Parameters
-from model.paraphraser import Paraphraser
+from model.parametersGAN import Parameters
+from model.generator import Generator
 
-def trainer(paraphraser, optimizer, batch_loader):
+def trainer(generator, optimizer, batch_loader):
     def train(i, batch_size, use_cuda, dropout):
         input = batch_loader.next_batch(batch_size, 'train')
         input = [var.cuda() if use_cuda else var for var in input]
@@ -22,7 +25,7 @@ def trainer(paraphraser, optimizer, batch_loader):
          decoder_input_source,
          decoder_input_target, target] = input
 
-        (logits, logits2), _, kld = paraphraser(dropout,
+        (logits, logits2), _, kld = generator(dropout,
                 (encoder_input_source, encoder_input_target),
                 (decoder_input_source, decoder_input_target),
                 z=None, use_cuda=use_cuda)
@@ -30,39 +33,20 @@ def trainer(paraphraser, optimizer, batch_loader):
         target = target.view(-1)
         cross_entropy, cross_entropy2 = [], []
 
-        logits = logits.view(-1, paraphraser.params.vocab_size)
+        logits = logits.view(-1, generator.params.vocab_size)
         cross_entropy = F.cross_entropy(logits, target)
 
-        if paraphraser.params.use_two_path_loss:
-            logits2 = logits2.view(-1, paraphraser.params.vocab_size)
-            cross_entropy2 = F.cross_entropy(logits2, target)
-        else:
-            cross_entropy2 = 0
+        logits2 = logits2.view(-1, generator.params.vocab_size)
+        cross_entropy2 = F.cross_entropy(logits2, target)
 
-        loss = paraphraser.params.cross_entropy_penalty_weight * (cross_entropy + cross_entropy2) \
-             + paraphraser.params.get_kld_coef(i) * kld
-
-        # if self.params.use_two_path_loss:
-        #     logits2p, _, _ = self(dropout,
-        #             (encoder_input_source, encoder_input_target),
-        #             (decoder_input_source, decoder_input_target),
-        #             z=None, use_cuda=use_cuda, paraphrase_available=False)
-        #
-        #     logits2p = logits2p.view(-1, self.params.vocab_size)
-        #     cross_entropy2p = F.cross_entropy(logits2p, target)
-        #
-        #     loss = self.params.cross_entropy_penalty_weight * cross_entropy \
-        #          + self.params.cross_entropy_penalty_weight * cross_entropy2p \
-        #          + self.params.get_kld_coef(i) * kld
-        # else:
-        #     loss = self.params.cross_entropy_penalty_weight * cross_entropy \
-        #          + self.params.get_kld_coef(i) * kld
+        loss = generator.params.cross_entropy_penalty_weight * (cross_entropy + cross_entropy2) \
+             + generator.params.get_kld_coef(i) * kld
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        return (cross_entropy, cross_entropy2), kld, paraphraser.params.get_kld_coef(i)
+        return (cross_entropy, cross_entropy2), kld, generator.params.get_kld_coef(i)
 
     return train
 
@@ -98,10 +82,9 @@ if __name__ == "__main__":
 
     batch_loader = BatchLoader()
     parameters = Parameters(batch_loader.max_seq_len,
-                            batch_loader.vocab_size,
-                            args.use_two_path_loss)
+                            batch_loader.vocab_size)
 
-    paraphraser = Paraphraser(parameters)
+    generator = Generator(parameters)
     ce_result_valid = []
     kld_result_valid = []
     ce_result_train = []
