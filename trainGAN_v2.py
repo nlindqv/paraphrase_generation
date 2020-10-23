@@ -102,71 +102,101 @@ def trainer(discriminator, generator, rollout, d_optimizer, g_optimizer, batch_l
 
     return train
 
+def validater(generator, discriminator, rollout, batch_loader):
+    # def get_samples(logits, target):
+    #     '''
+    #     logits: [batch, seq_len, vocab_size]
+    #     targets: [batch, seq_len]
+    #     '''
+    #
+    #     ## for version > 0.4
+    #     prediction = F.softmax(logits, dim=-1).data.cpu().numpy()
+    #
+    #
+    #     ## for version < 0.3
+    #     # seq_len = logits.size()[1]
+    #     # prediction = F.softmax(
+    #     #     logits.view(-1, self.params.vocab_size)).view(-1, seq_len, self.params.vocab_size)
+    #     # prediction = prediction.data.cpu().numpy()
+    #
+    #
+    #     target = target.data.cpu().numpy()
+    #
+    #     sampled, expected = [], []
+    #     for i in range(prediction.shape[0]):
+    #         sampled  += [' '.join([batch_loader.sample_word_from_distribution(d)
+    #             for d in prediction[i]])]
+    #         expected += [' '.join([batch_loader.get_word_by_idx(idx) for idx in target[i]])]
+    #
+    #     return sampled, expected
 
-def validate(batch_loader, batch_size, use_cuda, need_samples=False):
-    # Sample a batch of {s_o, s_p} from dataset
-    if need_samples:
-        input, sentences = batch_loader.next_batch(batch_size, 'test', return_sentences=True)
-        sentences = [[' '.join(s) for s in q] for q in sentences]
-    else:
-        input = batch_loader.next_batch(batch_size, 'test')
-
-    input = [var.cuda() if use_cuda else var for var in input]
-
-    [encoder_input_source,
-    encoder_input_target,
-    decoder_input_source,
-    decoder_input_target, target] = input
-
-    # Train Generator
-    logits, _, kld = generator(0.,
-            (encoder_input_source, encoder_input_target),
-            (decoder_input_source, decoder_input_target),
-            z=None, use_cuda=use_cuda)
-
-    logits = logits.view(2, -1, parameters.vocab_size)
-    target = target.view(-1)
-    ce_1 = F.cross_entropy(logits[0], target)
-    ce_2 = F.cross_entropy(logits[1], target)
-
-    # Sample a sequence to feed into discriminator
-    # prediction = [batch_size, seq_len, vocab_size]
-    prediction = F.softmax(logits[0].view(batch_size, -1, parameters.vocab_size), dim=-1).data.cpu().numpy()
-
-    samples = []
-    if need_samples:
-        [s1, s2] = sentences
-        sampled = []
-    else:
-        [s1, s2] = (None, None)
-        sampled = None
-    for i in range(prediction.shape[0]):
-        samples.append([batch_loader.sample_word_from_distribution(d)
-            for d in prediction[i]])
+    def validate(batch_loader, batch_size, use_cuda, need_samples=False):
+        # Sample a batch of {s_o, s_p} from dataset
         if need_samples:
-            sampled  += [' '.join([batch_loader.sample_word_from_distribution(d)
-                             for d in prediction[i]])]
+            input, sentences = batch_loader.next_batch(batch_size, 'test', return_sentences=True)
+            sentences = [[' '.join(s) for s in q] for q in sentences]
+        else:
+            input = batch_loader.next_batch(batch_size, 'test')
 
-    gen_samples = batch_loader.embed_batch(samples)
-    gen_samples = t.Tensor(gen_samples)
+        input = [var.cuda() if use_cuda else var for var in input]
 
-    rewards = rollout.reward(gen_samples, 2, input, use_cuda, batch_loader)
-    rewards = Variable(t.tensor(rewards))
-    neg_lik = F.cross_entropy(logits[0], target, size_average=False, reduce=False)
+        [encoder_input_source,
+        encoder_input_target,
+        decoder_input_source,
+        decoder_input_target, target] = input
 
-    dg_loss = t.mean(neg_lik * rewards.flatten())
+        # Train Generator
+        logits, _, kld = generator(0.,
+                (encoder_input_source, encoder_input_target),
+                (decoder_input_source, decoder_input_target),
+                z=None, use_cuda=use_cuda)
 
-    # Train discriminator with real and fake data
-    data = t.cat([encoder_input_target, gen_samples], dim=0)
+        logits = logits.view(2, -1, parameters.vocab_size)
+        target = target.view(-1)
+        ce_1 = F.cross_entropy(logits[0], target)
+        ce_2 = F.cross_entropy(logits[1], target)
 
-    labels = t.zeros(2*batch_size)
-    labels[:batch_size] = 1
+        # Sample a sequence to feed into discriminator
+        # prediction = [batch_size, seq_len, vocab_size]
+        prediction = F.softmax(logits[0].view(batch_size, -1, parameters.vocab_size), dim=-1).data.cpu().numpy()
 
-    d_logits = discriminator(data)
-    d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
+        samples = []
+        if need_samples:
+            [s1, s2] = sentences
+            sampled = []
+        else:
+            [s1, s2] = (None, None)
+            sampled = None
+        for i in range(prediction.shape[0]):
+            samples.append([batch_loader.sample_word_from_distribution(d)
+                for d in prediction[i]])
+            if need_samples:
+                sampled  += [' '.join([batch_loader.sample_word_from_distribution(d)
+                                 for d in prediction[i]])]
 
-    return (ce_1, ce_2, kld, dg_loss, d_loss), (sampled, s1, s2)
+        gen_samples = batch_loader.embed_batch(samples)
+        gen_samples = t.Tensor(gen_samples)
 
+        rewards = rollout.reward(gen_samples, 2, input, use_cuda, batch_loader)
+        rewards = Variable(t.tensor(rewards))
+        if use_cuda:
+            rewards = rewards.cuda()
+        neg_lik = F.cross_entropy(logits[0], target, size_average=False, reduce=False)
+
+        dg_loss = t.mean(neg_lik * rewards.flatten())
+
+        # Train discriminator with real and fake data
+        data = t.cat([encoder_input_target, gen_samples], dim=0)
+
+        labels = t.zeros(2*batch_size)
+        labels[:batch_size] = 1
+
+        d_logits = discriminator(data)
+        d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
+
+        return (ce_1, ce_2, kld, dg_loss, d_loss), (sampled, s1, s2)
+
+    return validate
 
 
 
@@ -235,13 +265,13 @@ if __name__ == "__main__":
 
     print(f'Initiate rollout...')
     rollout = Rollout(generator, discriminator, 0.8)
-    if use_cuda:
+    if args.use_cuda:
         rllout = rollout.cuda()
 
     # g_criterion = nn.CrossEntropyLoss()
     # d_criterion = nn.BCEWithLogitsLoss()
     train_step = trainer(discriminator, generator, rollout, d_optim, g_optim, batch_loader)
-
+    validate = validater(generator, discriminator, batch_loader)
     print(f'Start adversarial training...')
     for iteration in range(args.num_iterations):
         # Warmup training
