@@ -33,6 +33,9 @@ class Rollout(object):
 				data = x[:, 0:l, :]
 				# samples = [batch_size, seq_len, embed_size(300)]
 				samples = self.generator_beta.sample_with_seq(data, seq_len, input, use_cuda, batch_loader) # (batch_size, sequence_len)
+				if use_cuda:
+					samples = samples.cuda()
+
 				# reward = F.sigmoid(self.discriminator(samples)) # (batch_size, 1)
 				reward = self.discriminator(samples) # (batch_size, 1)
 				reward = reward.data.cpu().numpy()
