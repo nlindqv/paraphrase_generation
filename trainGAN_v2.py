@@ -14,7 +14,7 @@ from utils.rollout import Rollout
 from model.parametersGAN import Parameters
 from model.generator import Generator
 from model.discriminator import Discriminator
-
+from model.paraphraser import Paraphraser
 # iterations = 200000
 # use_trained = False
 # converged = False
@@ -172,7 +172,7 @@ if __name__ == "__main__":
                         help='num iterations (default: 60000)')
     parser.add_argument('--batch-size', type=int, default=32, metavar='BS',
                         help='batch size (default: 32)')
-    parser.add_argument('-cuda', '--use-cuda', type=bool, default=False, metavar='CUDA',
+    parser.add_argument('-cuda', '--use-cuda', type=bool, default=True, metavar='CUDA',
                         help='use cuda (default: True)')
     parser.add_argument('--learning-rate', type=float, default=0.0001, metavar='LR',
                         help='learning rate (default: 0.0001)')
@@ -213,6 +213,10 @@ if __name__ == "__main__":
     generator = Generator(parameters)
     print(f'Initiate discriminator...')
     discriminator = Discriminator(parameters)
+
+    if args.use_cuda:
+        generator = generator.cuda()
+        discriminator = discriminator.cuda()
 
     if args.use_trained:
         generator.load_state_dict(t.load('saved_models/trained_generator_' + args.model_name))
