@@ -86,6 +86,8 @@ def trainer(discriminator, generator, rollout, d_optimizer, g_optimizer, batch_l
 
         labels = t.zeros(2*batch_size)
         labels[:batch_size] = 1
+        if use_cuda:
+            labels = labels.cuda()
 
         d_logits = discriminator(data)
         d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
