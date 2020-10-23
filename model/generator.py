@@ -247,8 +247,6 @@ class Generator(nn.Module):
         decoder_input = x[:, 0, :].unsqueeze(1) #given[0]
         # print(f'Shape of decoder input: {decoder_input.size()}\n Given len: {given_len}')
         result = []
-        if use_cuda:
-            result = result.cuda()
 
         for i in range(seq_len):
             if use_cuda:
@@ -281,6 +279,8 @@ class Generator(nn.Module):
 
                 decoder_input = batch_loader.get_raw_input_from_sentences(words)
                 # print(f'Decoder input size: {decoder_input.size()}')
+                if use_cuda:
+                    decoder_input = decoder_input.cuda()
 
                 result.append(decoder_input)
 
