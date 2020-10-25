@@ -65,9 +65,6 @@ class Generator(nn.Module):
         out2, _ = self.decoder(decoder_input[0], decoder_input[1],
                                         z2, drop_prob, initial_state)
 
-        # return [out1, out2], [final_state1, final_state2], kld
-        out = t.stack([out1, out2], 0)
-        # final_state = t.cat((final_state1.unsqueeze(0), final_state2.unsqueeze(0)), 0)
         return (out1, out2), final_state, kld
 
     def learnable_parameters(self):
@@ -119,39 +116,15 @@ class Generator(nn.Module):
         return result
 
     def sample(self, x, seq_len, z, initial_state, use_cuda, batch_loader):
-        # t0 = time.time_ns()
-        # [encoder_input_source, encoder_input_target, decoder_input_source, _, _] = input
-        #
-        # encoder_input = [encoder_input_source, encoder_input_target]
-
-        # encode
-        # [batch_size, _, _] = encoder_input[0].size()
-
-        # mu, logvar = self.encoder(encoder_input[0], encoder_input[1])
-        # std = t.exp(0.5 * logvar)
-
-
-        # z = Variable(t.randn([batch_size, self.params.latent_variable_size]))
-        # if use_cuda:
-        #     z = z.cuda()
-        # z = z * std + mu
-
-        # print(f'Time to calculate z: {(time.time_ns() - t0) / (10 ** 6)} ms')
-        # t0 = time.time_ns()
-
-        # initial_state = self.decoder.build_initial_state(decoder_input_source)
 
         given_len = x.size(1)
         decoder_input = x[:, 0, :].unsqueeze(1) #given[0]
-        # print(f'Shape of decoder input: {decoder_input.size()}\n Given len: {given_len}')
         result = []
 
         # Dynamic programming approach
         result = list(x[:, :-1, :].chunk(given_len, 1))
         decoder_input = x[:, -1, :].unsqueeze(1)
 
-        # print(f'Time to build initial decoder state: {(time.time_ns() - t0) / (10 ** 6)} ms')
-        # t0 = time.time_ns()
         for i in range(given_len, seq_len):
             if use_cuda:
                 decoder_input = decoder_input.cuda()
@@ -174,7 +147,6 @@ class Generator(nn.Module):
             if all_end_labels:
                 print(f'Words last generated: {words}')
                 break
-
 
             decoder_input = batch_loader.get_raw_input_from_sentences(words)
 
