@@ -13,11 +13,16 @@ from torch.autograd import Variable
 
 import sample
 from utils.batch_loader import BatchLoader
+from utils.rollout import Rollout
 from model.parametersGAN import Parameters
 from model.generator import Generator
+from model.discriminator import Discriminator
 from model.paraphraser import Paraphraser
 
-def trainer(generator, optimizer, batch_loader):
+lambdas = [0.5, 0.5, 0.01]
+rollout_num = 4
+
+def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader):
     def train(i, batch_size, use_cuda, dropout):
         input = batch_loader.next_batch(batch_size, 'train')
         input = [var.cuda() if use_cuda else var for var in input]
@@ -33,26 +38,68 @@ def trainer(generator, optimizer, batch_loader):
                 z=None, use_cuda=use_cuda)
 
         target = target.view(-1)
-        cross_entropy, cross_entropy2 = [], []
 
         logits = logits.view(-1, generator.params.vocab_size)
-        cross_entropy = F.cross_entropy(logits, target)
+        logits2 = logits.view(-1, generator.params.vocab_size)
+        ce_1 = F.cross_entropy(logits, target)
+        ce_2 = F.cross_entropy(logits2, target)
 
-        logits2 = logits2.view(-1, generator.params.vocab_size)
-        cross_entropy2 = F.cross_entropy(logits2, target)
-        # cross_entropy2 = 0
-        loss = generator.params.cross_entropy_penalty_weight * (cross_entropy + cross_entropy2) \
-             + generator.params.get_kld_coef(i) * kld
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        # Generate fake data
+        prediction = F.softmax(logits, dim=-1)
+        samples = prediction.multinomial(1).view(batch_size, -1)
+        gen_samples = batch_loader.embed_batch_from_index(samples)
 
-        return (cross_entropy, cross_entropy2), kld, generator.params.get_kld_coef(i)
+        if use_cuda:
+            gen_samples = gen_samples.cuda()
+
+        t0 = time.time_ns()
+
+        rewards = rollout.reward(gen_samples, [encoder_input_source, encoder_input_target], decoder_input_source, use_cuda, batch_loader)
+        rewards = Variable(t.tensor(rewards))
+        if use_cuda:
+            rewards = rewards.cuda()
+        neg_lik = F.cross_entropy(logits, target, reduction='none')
+
+        dg_loss = t.mean(neg_lik * rewards.flatten())
+
+        print(f'Time through rollout (4): {(time.time_ns() - t0) / (10 ** 6)} ms')
+        print(f'with seq_len: {gen_samples.size()[1]}')
+        t0 = time.time_ns()
+
+
+        g_loss = lambda1 * ce_1 + lambda1 * kld + lambda2 * ce_2
+        # generator.params.cross_entropy_penalty_weight * (cross_entropy + cross_entropy2) \
+        # + generator.params.get_kld_coef(i) * kld
+
+        g_optim.zero_grad()
+        g_loss.backward()
+        t.nn.utils.clip_grad_norm_(generator.learnable_parameters(), 10)
+        g_optim.step()
+
+        # Train discriminator with real and fake data
+        data = t.cat([encoder_input_target, gen_samples], dim=0)
+
+        labels = t.zeros(2*batch_size)
+        labels[:batch_size] = 1
+
+        if use_cuda:
+            labels = labels.cuda()
+            data = data.cuda()
+
+        d_logits = discriminator(data)
+        d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
+
+        d_optim.zero_grad()
+        d_loss.backward()
+        t.nn.utils.clip_grad_norm_(discriminator.learnable_parameters(), 5)
+        d_optim.step()
+
+        return (ce_1, ce_2), kld, generator.params.get_kld_coef(i)
 
     return train
 
-def validater(generator, batch_loader):
+def validater(generator, discriminator, batch_loader):
     def get_samples(logits, target):
         '''
         logits: [batch, seq_len, vocab_size]
@@ -142,6 +189,8 @@ if __name__ == "__main__":
                             batch_loader.vocab_size)
 
     generator = Generator(parameters)
+    discriminator = Discriminator(parameters)
+
     ce_result_valid = []
     kld_result_valid = []
     ce_result_train = []
@@ -166,15 +215,24 @@ if __name__ == "__main__":
 
     if args.use_cuda:
         generator = generator.cuda()
+        discriminator = discriminator.cuda()
 
-    optimizer = Adam(generator.learnable_parameters(), args.learning_rate,
-        weight_decay=args.weight_decay)
+    g_optim = Adam(generator.learnable_parameters(), args.learning_rate)
+    d_optim = Adam(discriminator.learnable_parameters(), args.learning_rate)
 
-    train_step = trainer(generator, optimizer, batch_loader)
-    validate = validater(generator, batch_loader)
+    rollout = Rollout(generator, discriminator, 0.8, rollout_num)
+
+    train_step = trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader)
+    validate = validater(generator, discriminator, batch_loader)
 
     start = time.time_ns()
     for iteration in range(args.num_iterations):
+        if iteration <= 10000:
+            lambda3 = iteration / (1. * 10000) * lambdas[2]
+            lambda2 = iteration / (1. * 10000) * lambdas[1]
+            lambda1 = 1 - lambda2
+
+
         (cross_entropy, cross_entropy2), kld, coef = train_step(iteration, args.batch_size, args.use_cuda, args.dropout)
         if iteration % 10 == 0:
             print(f'Time per iteration: {((time.time_ns() - start) / (10 ** 6)) / 10} ms')
