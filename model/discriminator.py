@@ -12,9 +12,9 @@ class Discriminator(nn.Module):
                         batch_first=True,
                         dropout=0.3,
                         bidirectional=True)
-        self.fc = nn.Linear(4*self.params.discriminator_rnn_size, 4*self.params.discriminator_rnn_size)
+        self.fc = nn.Linear(4*self.params.discriminator_rnn_size, self.params.discriminator_rnn_size)
         self.relu = nn.ReLU()
-        self.out = nn.Linear(4*self.params.discriminator_rnn_size, 1)
+        self.out = nn.Linear(self.params.discriminator_rnn_size, 1)
 
     def forward(self, sentences):
         """

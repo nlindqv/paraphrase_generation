@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import os
+import time
 
 import numpy as np
 import torch as t
@@ -15,15 +16,8 @@ from model.parametersGAN import Parameters
 from model.generator import Generator
 from model.discriminator import Discriminator
 from model.paraphraser import Paraphraser
-# iterations = 200000
-# use_trained = False
-# converged = False
-# lr = 0.0001
-# warmup_step = 10000
-# batch_size = 32
-# use_cuda = False
+
 lambdas = [0.5, 0.5, 0.01]
-# dropout = 0.3
 
 def trainer(discriminator, generator, rollout, d_optimizer, g_optimizer, batch_loader):
     def train(i, batch_size, use_cuda, dropout, lambda1, lambda2, lambda3):
@@ -36,6 +30,8 @@ def trainer(discriminator, generator, rollout, d_optimizer, g_optimizer, batch_l
          decoder_input_source,
          decoder_input_target, target] = input
 
+        t0 = time.time_ns()
+
         # Train Generator
         logits, _, kld = generator(dropout,
                 (encoder_input_source, encoder_input_target),
@@ -47,6 +43,8 @@ def trainer(discriminator, generator, rollout, d_optimizer, g_optimizer, batch_l
         ce_1 = F.cross_entropy(logits[0], target)
         ce_2 = F.cross_entropy(logits[1], target)
 
+        print(f'Time through generator: {(time.time_ns() - t0) / (10 ** 6)} ms')
+        t0 = time.time_ns()
         # Sample a sequence to feed into discriminator
         # prediction = [batch_size, seq_len, vocab_size]
         prediction = F.softmax(logits[0].view(batch_size, -1, generator.params.vocab_size), dim=-1).data.cpu().numpy()
@@ -63,24 +61,32 @@ def trainer(discriminator, generator, rollout, d_optimizer, g_optimizer, batch_l
         if use_cuda:
             gen_samples = gen_samples.cuda()
 
-        rewards = rollout.reward(gen_samples, 8, input, use_cuda, batch_loader)
+        print(f'Time to generate samples: {(time.time_ns() - t0) / (10 ** 6)} ms')
+        t0 = time.time_ns()
+
+        rewards = rollout.reward(gen_samples, 4, [encoder_input_source, encoder_input_target], decoder_input_source, use_cuda, batch_loader)
         rewards = Variable(t.tensor(rewards))
         if use_cuda:
             rewards = rewards.cuda()
-        neg_lik = F.cross_entropy(logits[0], target, size_average=False, reduce=False)
+        neg_lik = F.cross_entropy(logits[0], target, reduction='none')
 
         dg_loss = t.mean(neg_lik * rewards.flatten())
 
+        print(f'Time through rollout (8): {(time.time_ns() - t0) / (10 ** 6)} ms')
+        t0 = time.time_ns()
+
         g_loss = lambda1 * ce_1 \
+                + lambda1 * kld \
                 + lambda2 * ce_2 \
                 + lambda3 * dg_loss \
-                + lambda1 * kld
 
         g_optimizer.zero_grad()
         g_loss.backward()
         t.nn.utils.clip_grad_norm_(generator.learnable_parameters(), 10)
         g_optimizer.step()
 
+        print(f'Time to backprop generator: {(time.time_ns() - t0) / (10 ** 6)} ms')
+        t0 = time.time_ns()
         # Train discriminator with real and fake data
         data = t.cat([encoder_input_target, gen_samples], dim=0)
 
@@ -93,10 +99,18 @@ def trainer(discriminator, generator, rollout, d_optimizer, g_optimizer, batch_l
         d_logits = discriminator(data)
         d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
 
+        print(f'Time through discriminator: {(time.time_ns() - t0) / (10 ** 6)} ms')
+        t0 = time.time_ns()
+
         d_optimizer.zero_grad()
         d_loss.backward()
         t.nn.utils.clip_grad_norm_(discriminator.learnable_parameters(), 5)
         d_optimizer.step()
+
+        print(f'Time to update discriminator: {(time.time_ns() - t0) / (10 ** 6)} ms')
+        t0 = time.time_ns()
+
+        rollout.update_params()
 
         return (ce_1, ce_2, dg_loss, d_loss), kld
 
@@ -176,6 +190,8 @@ def validater(generator, discriminator, rollout, batch_loader):
 
         gen_samples = batch_loader.embed_batch(samples)
         gen_samples = t.Tensor(gen_samples)
+        if use_cuda:
+            gen_samples = gen_samples.cuda()
 
         rewards = rollout.reward(gen_samples, 2, input, use_cuda, batch_loader)
         rewards = Variable(t.tensor(rewards))
@@ -209,7 +225,7 @@ if __name__ == "__main__":
                         help='num iterations (default: 60000)')
     parser.add_argument('--batch-size', type=int, default=32, metavar='BS',
                         help='batch size (default: 32)')
-    parser.add_argument('-cuda', '--use-cuda', type=bool, default=True, metavar='CUDA',
+    parser.add_argument('-cuda', '--use-cuda', type=bool, default=False, metavar='CUDA',
                         help='use cuda (default: True)')
     parser.add_argument('--learning-rate', type=float, default=0.0001, metavar='LR',
                         help='learning rate (default: 0.0001)')
@@ -251,6 +267,9 @@ if __name__ == "__main__":
     print(f'Initiate discriminator...')
     discriminator = Discriminator(parameters)
 
+    print(f'Number of parameters in generator: {sum(p.numel() for p in generator.learnable_parameters())}')
+    print(f'Number of parameters in discriminator: {sum(p.numel() for p in discriminator.learnable_parameters())}')
+
     if args.use_cuda:
         generator = generator.cuda()
         discriminator = discriminator.cuda()
@@ -265,13 +284,11 @@ if __name__ == "__main__":
 
     print(f'Initiate rollout...')
     rollout = Rollout(generator, discriminator, 0.8)
-    if args.use_cuda:
-        rllout = rollout.cuda()
 
     # g_criterion = nn.CrossEntropyLoss()
     # d_criterion = nn.BCEWithLogitsLoss()
     train_step = trainer(discriminator, generator, rollout, d_optim, g_optim, batch_loader)
-    validate = validater(generator, discriminator, batch_loader)
+    validate = validater(generator, discriminator, rollout, batch_loader)
     print(f'Start adversarial training...')
     for iteration in range(args.num_iterations):
         # Warmup training

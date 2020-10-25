@@ -181,6 +181,21 @@ class BatchLoader:
 
         return embed
 
+    def embed_batch_from_index(self, batch):
+        max_len = np.max([len(x) for x in batch])
+        embed = np.zeros((len(batch), max_len, 300))
+
+        for i in range(len(batch)):
+            for j in range(len(batch[i])):
+                if self.get_word_by_idx(batch[i][j]) == self.go_label or self.get_word_by_idx(batch[i][j]) == self.end_label:
+                    continue
+                if self.get_word_by_idx(batch[i][j]) in self.word_vec.keys():
+                    embed[i, j, :] = self.word_vec[self.get_word_by_idx(batch[i][j])]
+                else:
+                    embed[i, j, :] = self.word_vec['null']
+
+        return Variable(t.from_numpy(embed)).float()
+
     def get_word_dict(self, sentences):
         # create vocab of words
         word_dict = {}

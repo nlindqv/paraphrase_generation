@@ -1,4 +1,5 @@
 import math
+import time
 import torch as t
 import numpy as np
 import torch.nn as nn
@@ -65,12 +66,8 @@ class Paraphraser(nn.Module):
         if self.params.use_two_path_loss:
             out2, final_state2 = self.decoder(decoder_input[0], decoder_input[1],
                                             z2, drop_prob, initial_state)
-            # out = t.cat(out1.unsqueeze(0), out2.unsqueeze(0), 0)
-            # final_state = [final_state1, final_state2]
         else:
             out2 = None
-            # out = out1.unsqueeze(0)
-            # final_state = [final_state1]
 
         return (out1, out2), final_state, kld
 
@@ -95,6 +92,7 @@ class Paraphraser(nn.Module):
             target = target.view(-1)
             cross_entropy, cross_entropy2 = [], []
 
+
             logits = logits.view(-1, self.params.vocab_size)
             cross_entropy = F.cross_entropy(logits, target)
 
@@ -106,22 +104,6 @@ class Paraphraser(nn.Module):
 
             loss = self.params.cross_entropy_penalty_weight * (cross_entropy + cross_entropy2) \
                  + self.params.get_kld_coef(i) * kld
-
-            # if self.params.use_two_path_loss:
-            #     logits2p, _, _ = self(dropout,
-            #             (encoder_input_source, encoder_input_target),
-            #             (decoder_input_source, decoder_input_target),
-            #             z=None, use_cuda=use_cuda, paraphrase_available=False)
-            #
-            #     logits2p = logits2p.view(-1, self.params.vocab_size)
-            #     cross_entropy2p = F.cross_entropy(logits2p, target)
-            #
-            #     loss = self.params.cross_entropy_penalty_weight * cross_entropy \
-            #          + self.params.cross_entropy_penalty_weight * cross_entropy2p \
-            #          + self.params.get_kld_coef(i) * kld
-            # else:
-            #     loss = self.params.cross_entropy_penalty_weight * cross_entropy \
-            #          + self.params.get_kld_coef(i) * kld
 
             optimizer.zero_grad()
             loss.backward()
