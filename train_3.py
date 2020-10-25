@@ -53,7 +53,7 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader):
         if use_cuda:
             gen_samples = gen_samples.cuda()
 
-        t0 = time.time_ns()
+        # t0 = time.time_ns()
 
         rewards = rollout.reward(gen_samples, [encoder_input_source, encoder_input_target], decoder_input_source, use_cuda, batch_loader)
         rewards = Variable(t.tensor(rewards))
@@ -63,12 +63,12 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader):
 
         dg_loss = t.mean(neg_lik * rewards.flatten())
 
-        print(f'Time through rollout (4): {(time.time_ns() - t0) / (10 ** 6)} ms')
-        print(f'with seq_len: {gen_samples.size()[1]}')
-        t0 = time.time_ns()
+        # print(f'Time through rollout (4): {(time.time_ns() - t0) / (10 ** 6)} ms')
+        # print(f'with seq_len: {gen_samples.size()[1]}')
+        # t0 = time.time_ns()
 
 
-        g_loss = lambda1 * ce_1 + lambda1 * kld + lambda2 * ce_2
+        g_loss = lambda1 * ce_1 + lambda1 * kld + lambda2 * ce_2 + lambda3 * dg_loss
         # generator.params.cross_entropy_penalty_weight * (cross_entropy + cross_entropy2) \
         # + generator.params.get_kld_coef(i) * kld
 
@@ -95,7 +95,7 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader):
         t.nn.utils.clip_grad_norm_(discriminator.learnable_parameters(), 5)
         d_optim.step()
 
-        return (ce_1, ce_2), kld, generator.params.get_kld_coef(i)
+        return (ce_1, ce_2, dg_loss, d_loss), kld
 
     return train
 
@@ -135,25 +135,49 @@ def validater(generator, discriminator, batch_loader):
                                 (decoder_input_source, decoder_input_target),
                                 z=None, use_cuda=use_cuda)
 
+        target = target.view(-1)
+        logits = logits.view(-1, generator.params.vocab_size)
+        logits2 = logits2.view(-1, generator.params.vocab_size)
+        ce_1 = F.cross_entropy(logits, target)
+        ce_2 = F.cross_entropy(logits2, target)
+
         if need_samples:
             [s1, s2] = sentences
-            sampled, _ = get_samples(logits, target)
+            sampled = []
         else:
             s1, s2 = (None, None)
-            sampled, _ = (None, None)
+            sampled = None
+
+        prediction = F.softmax(logits, dim=-1)
+        samples = prediction.multinomial(1).view(batch_size, -1)
+        gen_samples = batch_loader.embed_batch_from_index(samples)
+
+        if use_cuda:
+            gen_samples = gen_samples.cuda()
+
+        rewards = rollout.reward(gen_samples, [encoder_input_source, encoder_input_target], decoder_input_source, use_cuda, batch_loader)
+        rewards = Variable(t.tensor(rewards))
+
+        if use_cuda:
+            rewards = rewards.cuda()
+        neg_lik = F.cross_entropy(logits, target, reduction='none')
+        dg_loss = t.mean(neg_lik * rewards.flatten())
 
 
-        target = target.view(-1)
+        # Train discriminator with real and fake data
+        data = t.cat([encoder_input_target, gen_samples], dim=0)
 
-        cross_entropy, cross_entropy2 = [], []
+        labels = t.zeros(2*batch_size)
+        labels[:batch_size] = 1
 
-        logits = logits.view(-1, generator.params.vocab_size)
-        cross_entropy = F.cross_entropy(logits, target)
+        if use_cuda:
+            labels = labels.cuda()
+            data = data.cuda()
 
-        logits2 = logits2.view(-1, generator.params.vocab_size)
-        cross_entropy2 = F.cross_entropy(logits2, target)
-        # cross_entropy2 = 0
-        return (cross_entropy, cross_entropy2), kld, (sampled, s1, s2)
+        d_logits = discriminator(data)
+        d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
+
+        return (ce_1, ce_2, kld, dg_loss, d_loss), kld, (sampled, s1, s2)
 
     return validate
 
@@ -163,24 +187,22 @@ if __name__ == "__main__":
                         help='num iterations (default: 60000)')
     parser.add_argument('--batch-size', type=int, default=32, metavar='BS',
                         help='batch size (default: 32)')
-    parser.add_argument('-cuda', '--use-cuda', type=bool, default=False, metavar='CUDA',
+    parser.add_argument('-cuda', '--use-cuda', type=bool, default=True, metavar='CUDA',
                         help='use cuda (default: True)')
-    parser.add_argument('--learning-rate', type=float, default=0.00005, metavar='LR',
-                        help='learning rate (default: 0.00005)')
+    parser.add_argument('--learning-rate', type=float, default=0.0001, metavar='LR',
+                        help='learning rate (default: 0.0001)')
     parser.add_argument('--dropout', type=float, default=0.3, metavar='DR',
                         help='dropout (default: 0.3)')
     parser.add_argument('-ut', '--use-trained', type=bool, default=False, metavar='UT',
                         help='load pretrained model (default: False)')
     parser.add_argument('-m', '--model-name', default='', metavar='MN',
                         help='name of model to save (default: "")')
-    parser.add_argument('--weight-decay', default=0.0, type=float, metavar='WD',
+    parser.add_argument('--warmup-step', default=10000, type=float, metavar='WS',
                         help='L2 regularization penalty (default: 0.0)')
     parser.add_argument('--use-quora', default=False, type=bool, metavar='quora',
                     help='if include quora dataset (default: False)')
     parser.add_argument('--interm-sampling', default=True, type=bool, metavar='IS',
                     help='if sample while training (default: False)')
-    parser.add_argument('-tpl', '--use_two_path_loss', default=False, type=bool, metavar='2PL',
-                    help='use two path loss while training (default: False)')
     parser.register('type', 'bool', lambda v: v.lower() in ["true", "t", "1"])
     args = parser.parse_args()
 
@@ -191,31 +213,40 @@ if __name__ == "__main__":
     generator = Generator(parameters)
     discriminator = Discriminator(parameters)
 
-    ce_result_valid = []
-    kld_result_valid = []
-    ce_result_train = []
-    kld_result_train = []
-    ce_cur_train = []
-    kld_cur_train = []
-    if args.use_two_path_loss:
-        ce2_cur_train = []
-        ce2_result_train = []
-        ce2_result_valid = []
+    # Loss main path
+    ce_result_valid, ce_result_train, ce_cur_train = [], [], []
+    # Loss second path
+    ce2_result_valid, ce2_result_train, ce2_cur_train = [], [], []
+    # KLD loss
+    kld_result_valid, kld_result_train, kld_cur_train = [], [], []
+    # Generator-discriminator loss
+    dg_result_valid, dg_result_train, dg_cur_train = [], [], []
+    # Discriminator loss
+    d_result_valid, d_result_train, d_cur_train = [], [], []
 
-    if args.use_trained:
-        paraphraser.load_state_dict(t.load('saved_models/trained_paraphraser_' + args.model_name))
-        ce_result_valid = list(np.load('logs/ce_result_valid_{}.npy'.format(args.model_name)))
-        kld_result_valid = list(np.load('logs/kld_result_valid_{}.npy'.format(args.model_name)))
-        ce_result_train = list(np.load('logs/ce_result_train_{}.npy'.format(args.model_name)))
-        kld_result_train = list(np.load('logs/kld_result_train_{}.npy'.format(args.model_name)))
-        if args.use_two_path_loss:
-            ce2_result_valid = list(np.load('logs/ce2_result_valid_{}.npy'.format(args.model_name)))
-            ce2_result_train = list(np.load('logs/ce2_result_train_{}.npy'.format(args.model_name)))
+    generator = Generator(parameters)
+    discriminator = Discriminator(parameters)
 
+    print(f'Number of parameters in generator: {sum(p.numel() for p in generator.learnable_parameters())}')
+    print(f'Number of parameters in discriminator: {sum(p.numel() for p in discriminator.learnable_parameters())}')
 
     if args.use_cuda:
         generator = generator.cuda()
         discriminator = discriminator.cuda()
+
+    if args.use_trained:
+        generator.load_state_dict(t.load('saved_models/trained_generator_' + args.model_name))
+        discriminator.load_state_dict(t.load('saved_models/trained_discriminator_' + args.model_name))
+        ce_result_valid = list(np.load('logs/ce_result_valid_{}.npy'.format(args.model_name)))
+        ce_result_train = list(np.load('logs/ce_result_train_{}.npy'.format(args.model_name)))
+        ce2_result_train = list(np.load('logs/ce2_result_train_{}.npy'.format(args.model_name)))
+        ce2_result_valid = list(np.load('logs/ce2_result_valid_{}.npy'.format(args.model_name)))
+        kld_result_valid = list(np.load('logs/kld_result_valid_{}.npy'.format(args.model_name)))
+        kld_result_train = list(np.load('logs/kld_result_train_{}.npy'.format(args.model_name)))
+        dg_result_train = list(np.load('logs/dg_result_train_{}.npy'.format(args.model_name)))
+        dg_result_valid = list(np.load('logs/dg_result_valid_{}.npy'.format(args.model_name)))
+        d_result_train = list(np.load('logs/d_result_train_{}.npy'.format(args.model_name)))
+        d_result_valid = list(np.load('logs/d_result_valid_{}.npy'.format(args.model_name)))
 
     g_optim = Adam(generator.learnable_parameters(), args.learning_rate)
     d_optim = Adam(discriminator.learnable_parameters(), args.learning_rate)
@@ -226,6 +257,8 @@ if __name__ == "__main__":
     validate = validater(generator, discriminator, batch_loader)
 
     start = time.time_ns()
+    converge_criterion, converge_count = 5, 0
+
     for iteration in range(args.num_iterations):
         if iteration <= 10000:
             lambda3 = iteration / (1. * 10000) * lambdas[2]
@@ -234,97 +267,120 @@ if __name__ == "__main__":
 
 
         (cross_entropy, cross_entropy2), kld, coef = train_step(iteration, args.batch_size, args.use_cuda, args.dropout)
-        if iteration % 10 == 0:
-            print(f'Time per iteration: {((time.time_ns() - start) / (10 ** 6)) / 10} ms')
-            start = time.time_ns()
 
-        ce_cur_train += [cross_entropy.data.cpu().numpy()]
+
+        # if iteration % 10 == 0:
+        #     print(f'Time per iteration: {((time.time_ns() - start) / (10 ** 6)) / 10} ms')
+        #     start = time.time_ns()
+
+        # Store losses
+        ce_cur_train += [ce_1.data.cpu().numpy()]
+        ce2_cur_train += [ce_2.data.cpu().numpy()]
         kld_cur_train += [kld.data.cpu().numpy()]
-        if args.use_two_path_loss:
-            ce2_cur_train += [cross_entropy2.data.cpu().numpy()]
+        dg_cur_train += [dg_loss.data.cpu().numpy()]
+        d_cur_train += [d_loss.data.cpu().numpy()]
+
 
         # validation
         if iteration % 500 == 0:
             ce_result_train += [np.mean(ce_cur_train)]
+            ce2_result_train += [np.mean(ce2_cur_train)]
             kld_result_train += [np.mean(kld_cur_train)]
-            ce_cur_train, kld_cur_train = [], []
+            dg_result_train += [np.mean(dg_cur_train)]
+            d_result_train += [np.mean(d_cur_train)]
 
-            if args.use_two_path_loss:
-                ce2_result_train += [np.mean(ce2_cur_train)]
-                ce2_cur_train = []
+
+            ce_cur_train, ce2_cur_train, kld_cur_train, dg_cur_train, d_cur_train = [], [], [], [], []
 
             print('\n')
             print('------------TRAIN-------------')
             print('----------ITERATION-----------')
             print(iteration)
             print('--------CROSS-ENTROPY---------')
-            print(ce_result_train[-1])
-            if args.use_two_path_loss:
-                print('----CROSS-ENTROPY-2ND PATH----')
-                print(ce2_result_train[-1])
+            print(f'{ce_result_train[-1]}\t (lambda1: {lambda1})')
+            print('----CROSS-ENTROPY-2ND PATH----')
+            print(f'{ce2_result_train[-1]}\t (lambda2: {lambda2})')
+            print('--------------DG--------------')
+            print(f'{dg_result_train[-1]}\t (lambda3: {lambda3})')
             print('-------------KLD--------------')
-            print(kld_result_train[-1])
-            print('-----------KLD-coef-----------')
-            print(coef)
+            print(f'{kld_result_train[-1]}\t (lambda1: {lambda1})')
+            print('-------Discriminator----------')
+            print(f'{d_result_train[-1]}')
             print('------------------------------')
 
 
             # averaging across several batches
-            cross_entropy, cross_entropy2, kld = [], [], []
+            ce_1, ce_2, kld, dg_loss, d_loss = [], [], [], [], []
             for i in range(20):
-                (ce, ce2), kl, _ = validate(args.batch_size, args.use_cuda)
-                cross_entropy += [ce.data.cpu().numpy()]
+                (c1, c2, kl, dg, d), _ = validate(batch_loader, args.batch_size, args.use_cuda)
+                ce_1 += [c1.data.cpu().numpy()]
+                ce_2 += [c2.data.cpu().numpy()]
                 kld += [kl.data.cpu().numpy()]
+                dg_loss += [dg.data.cpu().numpy()]
+                d_loss += [d.data.cpu().numpy()]
 
-                if args.use_two_path_loss:
-                    cross_entropy2 += [ce2.data.cpu().numpy()]
 
-
+            ce_1 = np.mean(ce_1)
+            ce_2 = np.mean(ce_2)
             kld = np.mean(kld)
-            cross_entropy = np.mean(cross_entropy)
-            ce_result_valid += [cross_entropy]
+            dg_loss = np.mean(dg_loss)
+            d_loss = np.mean(d_loss)
+
+            ce_result_valid += [ce_1]
+            ce2_result_valid += [ce_2]
             kld_result_valid += [kld]
-            if args.use_two_path_loss:
-                cross_entropy2 = np.mean(cross_entropy2)
-                ce2_result_valid += [cross_entropy2]
+            dg_result_valid += [dg_loss]
+            d_result_valid += [d_loss]
+
+            total_loss = ce_1 + ce_2 + kld + dg_loss
+            last_total_loss = ce_result_valid[-2] + ce2_result_valid[-2] + kld_result_valid[-2] + dg_result_valid[-2]
+
+            if total_loss >= last_total_loss:
+                converge_count += 1
+            else:
+                converge_count = 0
 
             print('\n')
             print('------------VALID-------------')
             print('--------CROSS-ENTROPY---------')
-            print(cross_entropy)
-            if args.use_two_path_loss:
-                print('----CROSS-ENTROPY-2ND-PATH----')
-                print(cross_entropy2)
+            print(ce_1)
+            print('----CROSS-ENTROPY-2ND-PATH----')
+            print(ce_2)
+            print('--------------DG--------------')
+            print(dg_loss)
             print('-------------KLD--------------')
             print(kld)
+            print('-------Discriminator----------')
+            print(d_loss)
             print('------------------------------')
 
-            _, _, (sampled, s1, s2) = validate(2, args.use_cuda, need_samples=True)
+            _, (sampled, s1, s2) = validate(batch_loader, 2, args.use_cuda, need_samples=True)
 
             for i in range(len(sampled)):
                 result = generator.sample_with_pair(batch_loader, 20, args.use_cuda, s1[i], s2[i])
+                result2 = generator.sample_with_pair(batch_loader, 20, args.use_cuda, s1[i], s2[i], input_only=True)
 
                 print('source: ' + s1[i])
                 print('target: ' + s2[i])
                 print('valid: ' + sampled[i])
                 print('sampled: ' + result)
-                if args.use_two_path_loss:
-                    result2 = generator.sample_with_pair(batch_loader, 20, args.use_cuda, s1[i], s2[i], input_only=True)
-                    print('sampled 2: ' + result2)
+                print('sampled (no ref): ' + result2)
                 print('...........................')
 
         # save model
         if (iteration % 10000 == 0 and iteration != 0) or iteration == (args.num_iterations - 1):
-            t.save(generator.state_dict(), 'saved_models/trained_paraphraser_' + args.model_name)
+            t.save(generator.state_dict(), 'saved_models/trained_generator_' + args.model_name)
+            t.save(discriminator.state_dict(), 'saved_models/trained_discrminator_' + args.model_name)
             np.save('logs/ce_result_valid_{}.npy'.format(args.model_name), np.array(ce_result_valid))
-            np.save('logs/ce_result_valid_{}.npy'.format(args.model_name), np.array(ce_result_valid))
-            np.save('logs/kld_result_valid_{}'.format(args.model_name), np.array(kld_result_valid))
             np.save('logs/ce_result_train_{}.npy'.format(args.model_name), np.array(ce_result_train))
+            np.save('logs/kld_result_valid_{}'.format(args.model_name), np.array(kld_result_valid))
             np.save('logs/kld_result_train_{}'.format(args.model_name), np.array(kld_result_train))
-            if args.use_two_path_loss:
-                np.save('logs/ce2_result_valid_{}.npy'.format(args.model_name), np.array(ce2_result_valid))
-                np.save('logs/ce2_result_train_{}.npy'.format(args.model_name), np.array(ce2_result_train))
-
+            np.save('logs/ce2_result_valid_{}.npy'.format(args.model_name), np.array(ce2_result_valid))
+            np.save('logs/ce2_result_train_{}.npy'.format(args.model_name), np.array(ce2_result_train))
+            np.save('logs/dg_result_valid_{}.npy'.format(args.model_name), np.array(dg_result_valid))
+            np.save('logs/dg_result_train_{}.npy'.format(args.model_name), np.array(dg_result_train))
+            np.save('logs/d_result_valid_{}.npy'.format(args.model_name), np.array(d_result_valid))
+            np.save('logs/d_result_train_{}.npy'.format(args.model_name), np.array(d_result_train))
 
         #interm sampling
         if (iteration % 20000 == 0 and iteration != 0) or iteration == (args.num_iterations - 1):
@@ -334,7 +390,7 @@ if __name__ == "__main__":
                 args.seq_len = 30
 
                 (result, result2), target, source = sample.sample_with_input_file(batch_loader,
-                                generator, args, sample_file, args.use_two_path_loss)
+                                generator, args, sample_file, True)
 
                 sampled_file_dst = 'logs/intermediate/sampled_out_{}k_{}{}.txt'.format(
                                             iteration//1000, sample_file, args.model_name)
@@ -342,19 +398,66 @@ if __name__ == "__main__":
                                             iteration//1000, sample_file, args.model_name)
                 source_file_dst = 'logs/intermediate/source_out_{}k_{}{}.txt'.format(
                                             iteration//1000, sample_file, args.model_name)
+                sampled2_file_dst = 'logs/intermediate/sampled2_out_{}k_{}{}.txt'.format(
+                                            iteration//1000, sample_file, args.model_name)
+                                            # sampled2 = no reference
                 np.save(sampled_file_dst, np.array(result))
+                np.save(sampled2_file_dst, np.array(result))
                 np.save(target_file_dst, np.array(target))
                 np.save(source_file_dst, np.array(source))
 
-                if args.use_two_path_loss:
-                    sampled2_file_dst = 'logs/intermediate/sampled2_out_{}k_{}{}.txt'.format(
-                                                iteration//1000, sample_file, args.model_name)
-                    np.save(sampled2_file_dst, np.array(result))
 
                 print('------------------------------')
                 print('results saved to: ')
                 print(sampled_file_dst)
-                if args.use_two_path_loss:
-                    print(sampled2_file_dst)
+                print(sampled2_file_dst)
                 print(target_file_dst)
                 print(source_file_dst)
+
+        if converge_count == converge_criterion:
+            sample_file = 'quora_test'
+            args.use_mean = False
+            args.seq_len = 30
+
+            (result, result2), target, source = sample.sample_with_input_file(batch_loader,
+                            generator, args, sample_file, True)
+
+            sampled_file_dst = 'logs/intermediate/sampled_out_{}k_{}{}.txt'.format(
+                                        iteration//1000, sample_file, args.model_name)
+            target_file_dst = 'logs/intermediate/target_out_{}k_{}{}.txt'.format(
+                                        iteration//1000, sample_file, args.model_name)
+            source_file_dst = 'logs/intermediate/source_out_{}k_{}{}.txt'.format(
+                                        iteration//1000, sample_file, args.model_name)
+            sampled2_file_dst = 'logs/intermediate/sampled2_out_{}k_{}{}.txt'.format(
+                                        iteration//1000, sample_file, args.model_name)
+                                        # sampled2 = no reference
+            np.save(sampled_file_dst, np.array(result))
+            np.save(sampled2_file_dst, np.array(result))
+            np.save(target_file_dst, np.array(target))
+            np.save(source_file_dst, np.array(source))
+
+
+            print('------------------------------')
+            print('results saved to: ')
+            print(sampled_file_dst)
+            print(sampled2_file_dst)
+            print(target_file_dst)
+            print(source_file_dst)
+
+            t.save(generator.state_dict(), 'saved_models/trained_generator_' + args.model_name)
+            t.save(discriminator.state_dict(), 'saved_models/trained_discrminator_' + args.model_name)
+            np.save('logs/ce_result_valid_{}.npy'.format(args.model_name), np.array(ce_result_valid))
+            np.save('logs/ce_result_train_{}.npy'.format(args.model_name), np.array(ce_result_train))
+            np.save('logs/kld_result_valid_{}'.format(args.model_name), np.array(kld_result_valid))
+            np.save('logs/kld_result_train_{}'.format(args.model_name), np.array(kld_result_train))
+            np.save('logs/ce2_result_valid_{}.npy'.format(args.model_name), np.array(ce2_result_valid))
+            np.save('logs/ce2_result_train_{}.npy'.format(args.model_name), np.array(ce2_result_train))
+            np.save('logs/dg_result_valid_{}.npy'.format(args.model_name), np.array(dg_result_valid))
+            np.save('logs/dg_result_train_{}.npy'.format(args.model_name), np.array(dg_result_train))
+            np.save('logs/d_result_valid_{}.npy'.format(args.model_name), np.array(d_result_valid))
+            np.save('logs/d_result_train_{}.npy'.format(args.model_name), np.array(d_result_train))
+
+            break
+
+
+# End

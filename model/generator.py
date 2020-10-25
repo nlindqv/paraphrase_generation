@@ -66,7 +66,7 @@ class Generator(nn.Module):
                                         z2, drop_prob, initial_state)
 
         # return [out1, out2], [final_state1, final_state2], kld
-        out = t.stack([out1, out2], 0)
+        # out = t.stack([out1, out2], 0)
         # final_state = t.cat((final_state1.unsqueeze(0), final_state2.unsqueeze(0)), 0)
         return (out1, out2), final_state, kld
 
