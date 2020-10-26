@@ -18,6 +18,8 @@ from model.parametersGAN import Parameters
 from model.generator import Generator
 from model.discriminator import Discriminator
 from model.paraphraser import Paraphraser
+from apex import amp
+
 
 lambdas = [0.5, 0.5, 0.01]
 rollout_num = 4
@@ -73,7 +75,9 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader):
         # + generator.params.get_kld_coef(i) * kld
 
         g_optim.zero_grad()
-        g_loss.backward()
+        with amp.scale_loss(g_loss, g_optim) as scaled_loss:
+            scaled_loss.backward()
+        # g_loss.backward()
         t.nn.utils.clip_grad_norm_(generator.learnable_parameters(), 10)
         g_optim.step()
 
@@ -91,7 +95,9 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader):
         d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
 
         d_optim.zero_grad()
-        d_loss.backward()
+        with amp.scale_loss(d_loss, d_optim) as scaled_loss:
+            scaled_loss.backward()
+        # d_loss.backward()
         t.nn.utils.clip_grad_norm_(discriminator.learnable_parameters(), 5)
         d_optim.step()
 
@@ -177,7 +183,7 @@ def validater(generator, discriminator, batch_loader):
         d_logits = discriminator(data)
         d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
 
-        return (ce_1, ce_2, kld, dg_loss, d_loss), kld, (sampled, s1, s2)
+        return (ce_1, ce_2, kld, dg_loss, d_loss), (sampled, s1, s2)
 
     return validate
 
@@ -199,7 +205,7 @@ if __name__ == "__main__":
                         help='name of model to save (default: "")')
     parser.add_argument('--warmup-step', default=10000, type=float, metavar='WS',
                         help='L2 regularization penalty (default: 0.0)')
-    parser.add_argument('--use-quora', default=False, type=bool, metavar='quora',
+    parser.add_argument('--use-quora', default=Falsepyt, type=bool, metavar='quora',
                     help='if include quora dataset (default: False)')
     parser.add_argument('--interm-sampling', default=True, type=bool, metavar='IS',
                     help='if sample while training (default: False)')
@@ -251,12 +257,14 @@ if __name__ == "__main__":
     g_optim = Adam(generator.learnable_parameters(), args.learning_rate)
     d_optim = Adam(discriminator.learnable_parameters(), args.learning_rate)
 
+    generator, g_optim = amp.initialize(generator, g_optim, opt_level="O1")
+    discriminator, d_optim = amp.initialize(discriminator, d_optim, opt_level="O1")
+
     rollout = Rollout(generator, discriminator, 0.8, rollout_num)
 
     train_step = trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader)
-    validate = validater(generator, discriminator, batch_loader)
+    validate = validater(generator, discriminator, rollout, batch_loader)
 
-    start = time.time_ns()
     converge_criterion, converge_count = 5, 0
 
     for iteration in range(args.num_iterations):
@@ -266,7 +274,7 @@ if __name__ == "__main__":
             lambda1 = 1 - lambda2
 
 
-        (cross_entropy, cross_entropy2), kld, coef = train_step(iteration, args.batch_size, args.use_cuda, args.dropout)
+        (ce_1, ce_2, dg_loss, d_loss), kld = train_step(iteration, args.batch_size, args.use_cuda, args.dropout)
 
 
         # if iteration % 10 == 0:
@@ -312,7 +320,7 @@ if __name__ == "__main__":
             # averaging across several batches
             ce_1, ce_2, kld, dg_loss, d_loss = [], [], [], [], []
             for i in range(20):
-                (c1, c2, kl, dg, d), _ = validate(batch_loader, args.batch_size, args.use_cuda)
+                (c1, c2, kl, dg, d), _ = validate(args.batch_size, args.use_cuda)
                 ce_1 += [c1.data.cpu().numpy()]
                 ce_2 += [c2.data.cpu().numpy()]
                 kld += [kl.data.cpu().numpy()]
@@ -333,12 +341,13 @@ if __name__ == "__main__":
             d_result_valid += [d_loss]
 
             total_loss = ce_1 + ce_2 + kld + dg_loss
-            last_total_loss = ce_result_valid[-2] + ce2_result_valid[-2] + kld_result_valid[-2] + dg_result_valid[-2]
+            if iteration > 10000:
+                last_total_loss = ce_result_valid[-2] + ce2_result_valid[-2] + kld_result_valid[-2] + dg_result_valid[-2]
 
-            if total_loss >= last_total_loss:
-                converge_count += 1
-            else:
-                converge_count = 0
+                if total_loss >= last_total_loss:
+                    converge_count += 1
+                else:
+                    converge_count = 0
 
             print('\n')
             print('------------VALID-------------')
@@ -354,7 +363,7 @@ if __name__ == "__main__":
             print(d_loss)
             print('------------------------------')
 
-            _, (sampled, s1, s2) = validate(batch_loader, 2, args.use_cuda, need_samples=True)
+            _, (sampled, s1, s2) = validate(2, args.use_cuda, need_samples=True)
 
             for i in range(len(sampled)):
                 result = generator.sample_with_pair(batch_loader, 20, args.use_cuda, s1[i], s2[i])
