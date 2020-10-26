@@ -257,10 +257,11 @@ if __name__ == "__main__":
     g_optim = Adam(generator.learnable_parameters(), args.learning_rate)
     d_optim = Adam(discriminator.learnable_parameters(), args.learning_rate)
 
+    rollout = Rollout(generator, discriminator, 0.8, rollout_num)
+
     [generator, discriminator], [g_optim, d_optim] = amp.initialize([generator, discriminator], [g_optim, d_optim], opt_level="O1", num_losses=2)
     # discriminator, d_optim = amp.initialize(discriminator, d_optim, opt_level="O1")
 
-    rollout = Rollout(generator, discriminator, 0.8, rollout_num)
 
     train_step = trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader)
     validate = validater(generator, discriminator, rollout, batch_loader)
