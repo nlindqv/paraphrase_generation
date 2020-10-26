@@ -205,7 +205,7 @@ if __name__ == "__main__":
                         help='name of model to save (default: "")')
     parser.add_argument('--warmup-step', default=10000, type=float, metavar='WS',
                         help='L2 regularization penalty (default: 0.0)')
-    parser.add_argument('--use-quora', default=Falsepyt, type=bool, metavar='quora',
+    parser.add_argument('--use-quora', default=False, type=bool, metavar='quora',
                     help='if include quora dataset (default: False)')
     parser.add_argument('--interm-sampling', default=True, type=bool, metavar='IS',
                     help='if sample while training (default: False)')
