@@ -18,8 +18,8 @@ from model.parametersGAN import Parameters
 from model.generator import Generator
 from model.discriminator import Discriminator
 from model.paraphraser import Paraphraser
-from apex import amp
-
+# from apex import amp
+import gc
 
 lambdas = [0.5, 0.5, 0.01]
 rollout_num = 4
@@ -75,9 +75,9 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader):
         # + generator.params.get_kld_coef(i) * kld
 
         g_optim.zero_grad()
-        with amp.scale_loss(g_loss, g_optim) as scaled_loss:
-            scaled_loss.backward()
-        # g_loss.backward()
+        # with amp.scale_loss(g_loss, g_optim) as scaled_loss:
+            # scaled_loss.backward()
+        g_loss.backward()
         t.nn.utils.clip_grad_norm_(generator.learnable_parameters(), 10)
         g_optim.step()
 
@@ -95,9 +95,9 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader):
         d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
 
         d_optim.zero_grad()
-        with amp.scale_loss(d_loss, d_optim) as scaled_loss:
-            scaled_loss.backward()
-        # d_loss.backward()
+        # with amp.scale_loss(d_loss, d_optim) as scaled_loss:
+            # scaled_loss.backward()
+        d_loss.backward()
         t.nn.utils.clip_grad_norm_(discriminator.learnable_parameters(), 5)
         d_optim.step()
 
@@ -257,8 +257,8 @@ if __name__ == "__main__":
     g_optim = Adam(generator.learnable_parameters(), args.learning_rate)
     d_optim = Adam(discriminator.learnable_parameters(), args.learning_rate)
 
-    generator, g_optim = amp.initialize(generator, g_optim, opt_level="O1")
-    discriminator, d_optim = amp.initialize(discriminator, d_optim, opt_level="O1")
+    # generator, g_optim = amp.initialize(generator, g_optim, opt_level="O1")
+    # discriminator, d_optim = amp.initialize(discriminator, d_optim, opt_level="O1")
 
     rollout = Rollout(generator, discriminator, 0.8, rollout_num)
 
@@ -276,6 +276,12 @@ if __name__ == "__main__":
 
         (ce_1, ce_2, dg_loss, d_loss), kld = train_step(iteration, args.batch_size, args.use_cuda, args.dropout)
 
+        for obj in gc.get_objects():
+            try:
+                if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
+                    print(type(obj), obj.size())
+            except:
+                pass
 
         # if iteration % 10 == 0:
         #     print(f'Time per iteration: {((time.time_ns() - start) / (10 ** 6)) / 10} ms')
