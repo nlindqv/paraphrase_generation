@@ -18,7 +18,7 @@ from model.parametersGAN import Parameters
 from model.generator import Generator
 from model.discriminator import Discriminator
 from model.paraphraser import Paraphraser
-# from apex import amp
+#from apex import amp
 import gc
 
 lambdas = [0.5, 0.5, 0.01]
@@ -95,8 +95,9 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader):
         d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
 
         d_optim.zero_grad()
-        # with amp.scale_loss(d_loss, d_optim, loss_id=1) as d_scaled_loss:
-            # d_scaled_loss.backward()
+
+        #with amp.scale_loss(d_loss, d_optim, loss_id=1) as d_scaled_loss:
+        #    d_scaled_loss.backward()
         d_loss.backward()
         t.nn.utils.clip_grad_norm_(discriminator.learnable_parameters(), 5)
         d_optim.step()
@@ -156,6 +157,9 @@ def validater(generator, discriminator, rollout, batch_loader):
 
         prediction = F.softmax(logits, dim=-1)
         samples = prediction.multinomial(1).view(batch_size, -1)
+        if need_samples:
+            for i in range(samples.size(0)):
+                sampled += [' '.join(batch_loader.get_word_by_idx(idx) for idx in samples[i])]
         gen_samples = batch_loader.embed_batch_from_index(samples)
 
         if use_cuda:
@@ -260,14 +264,19 @@ if __name__ == "__main__":
     # [generator, discriminator], [g_optim, d_optim] = amp.initialize([generator, discriminator], [g_optim, d_optim], opt_level="O1", num_losses=2)
 
     rollout = Rollout(generator, discriminator, 0.8, rollout_num)
+
     # discriminator, d_optim = amp.initialize(discriminator, d_optim, opt_level="O1")
 
 
     train_step = trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader)
     validate = validater(generator, discriminator, rollout, batch_loader)
 
-    converge_criterion, converge_count = 5, 0
+
+    converge_criterion, converge_count = 10, 0
+    best_total_loss = np.inf
+
     start = time.time_ns()
+
     for iteration in range(args.num_iterations):
         if iteration <= 10000:
             lambda3 = iteration / (1. * 10000) * lambdas[2]
@@ -276,6 +285,7 @@ if __name__ == "__main__":
 
 
         (ce_1, ce_2, dg_loss, d_loss), kld = train_step(iteration, args.batch_size, args.use_cuda, args.dropout)
+        t.cuda.empty_cache()
 
         # for obj in gc.get_objects():
         #     try:
@@ -349,12 +359,14 @@ if __name__ == "__main__":
 
             total_loss = ce_1 + ce_2 + kld + dg_loss
             if iteration > 10000:
-                last_total_loss = ce_result_valid[-2] + ce2_result_valid[-2] + kld_result_valid[-2] + dg_result_valid[-2]
-
-                if total_loss >= last_total_loss:
-                    converge_count += 1
+                if np.isinf(best_total_loss):
+                    best_total_loss = total_loss
                 else:
-                    converge_count = 0
+                    if total_loss >= best_total_loss:
+                        converge_count += 1
+                    else:
+                        best_total_loss = total_loss
+                        converge_count = 0
 
             print('\n')
             print('------------VALID-------------')
