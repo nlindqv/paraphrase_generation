@@ -223,8 +223,8 @@ class Paraphraser(nn.Module):
             logits = logits.view(-1, self.params.vocab_size)
             # prediction = F.softmax(logits)
             prediction = F.softmax(logits, dim=-1)
-            word = batch_loader.likely_word_from_distribution(prediction.data.cpu().numpy()[-1])
-            # word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[-1])
+            # word = batch_loader.likely_word_from_distribution(prediction.data.cpu().numpy()[-1])
+            word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[-1])
             if word == batch_loader.end_label:
                 break
             result += ' ' + word
@@ -238,8 +238,34 @@ class Paraphraser(nn.Module):
         input = [var.cuda() if use_cuda else var for var in input]
         return self.sample_with_input(batch_loader, seq_len, use_cuda, False, input, input_only)
 
-    def sample_with_seed(self, batch_loader, seq_len, use_cuda, seed):
-        pass
+    def sample_from_normal(self, batch_loader, seq_len, use_cuda, input):
+        [_, _, decoder_input_source, _, _] = input
+        [batch_size, _, _] = decoder_input_source.size()
+        z = Variable(t.randn([batch_size, self.params.latent_variable_size]))
+        if use_cuda:
+            z = z.cuda()
+        initial_state = self.decoder.build_initial_state(decoder_input_source)
+
+        decoder_input = batch_loader.get_raw_input_from_sentences([batch_loader.go_label])
+
+        result = ''
+        for i in range(seq_len):
+            if use_cuda:
+                decoder_input = decoder_input.cuda()
+
+            logits, initial_state = self.decoder(None, decoder_input, z, 0.0, initial_state)
+            logits = logits.view(-1, self.params.vocab_size)
+            # prediction = F.softmax(logits)
+            prediction = F.softmax(logits, dim=-1)
+            # word = batch_loader.likely_word_from_distribution(prediction.data.cpu().numpy()[-1])
+            word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[-1])
+            if word == batch_loader.end_label:
+                break
+            result += ' ' + word
+
+            decoder_input = batch_loader.get_raw_input_from_sentences([word])
+
+        return result
 
     def sample_with_phrase(self, batch_loader, seq_len, use_cuda, source_sent):
         pass
