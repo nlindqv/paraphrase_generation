@@ -75,8 +75,8 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader):
         # + generator.params.get_kld_coef(i) * kld
 
         g_optim.zero_grad()
- #       with amp.scale_loss(g_loss, g_optim, loss_id=0) as g_scaled_loss:
-  #          g_scaled_loss.backward()
+        # with amp.scale_loss(g_loss, g_optim, loss_id=0) as g_scaled_loss:
+            # g_scaled_loss.backward()
         g_loss.backward()
         t.nn.utils.clip_grad_norm_(generator.learnable_parameters(), 10)
         g_optim.step()
@@ -95,6 +95,7 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader):
         d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
 
         d_optim.zero_grad()
+
         #with amp.scale_loss(d_loss, d_optim, loss_id=1) as d_scaled_loss:
         #    d_scaled_loss.backward()
         d_loss.backward()
@@ -196,7 +197,7 @@ if __name__ == "__main__":
                         help='num iterations (default: 60000)')
     parser.add_argument('--batch-size', type=int, default=32, metavar='BS',
                         help='batch size (default: 32)')
-    parser.add_argument('-cuda', '--use-cuda', type=bool, default=True, metavar='CUDA',
+    parser.add_argument('-cuda', '--use-cuda', type=bool, default=False, metavar='CUDA',
                         help='use cuda (default: True)')
     parser.add_argument('--learning-rate', type=float, default=0.0001, metavar='LR',
                         help='learning rate (default: 0.0001)')
@@ -260,17 +261,22 @@ if __name__ == "__main__":
     g_optim = Adam(generator.learnable_parameters(), args.learning_rate)
     d_optim = Adam(discriminator.learnable_parameters(), args.learning_rate)
 
+    # [generator, discriminator], [g_optim, d_optim] = amp.initialize([generator, discriminator], [g_optim, d_optim], opt_level="O1", num_losses=2)
+
     rollout = Rollout(generator, discriminator, 0.8, rollout_num)
 
- #   [generator, discriminator], [g_optim, d_optim] = amp.initialize([generator, discriminator], [g_optim, d_optim], opt_level="O1", num_losses=2)
     # discriminator, d_optim = amp.initialize(discriminator, d_optim, opt_level="O1")
 
 
     train_step = trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader)
     validate = validater(generator, discriminator, rollout, batch_loader)
 
+
     converge_criterion, converge_count = 10, 0
     best_total_loss = np.inf
+
+    start = time.time_ns()
+
     for iteration in range(args.num_iterations):
         if iteration <= 10000:
             lambda3 = iteration / (1. * 10000) * lambdas[2]
@@ -281,16 +287,16 @@ if __name__ == "__main__":
         (ce_1, ce_2, dg_loss, d_loss), kld = train_step(iteration, args.batch_size, args.use_cuda, args.dropout)
         t.cuda.empty_cache()
 
-        for obj in gc.get_objects():
-            try:
-                if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
-                    print(type(obj), obj.size())
-            except:
-                pass
+        # for obj in gc.get_objects():
+        #     try:
+        #         if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
+        #             print(type(obj), obj.size())
+        #     except:
+        #         pass
 
-        # if iteration % 10 == 0:
-        #     print(f'Time per iteration: {((time.time_ns() - start) / (10 ** 6)) / 10} ms')
-        #     start = time.time_ns()
+        if iteration % 10 == 0:
+            print(f'Time per iteration: {((time.time_ns() - start) / (10 ** 6)) / 10} ms')
+            start = time.time_ns()
 
         # Store losses
         ce_cur_train += [ce_1.data.cpu().numpy()]
