@@ -55,7 +55,7 @@ class BatchLoader:
         self.df_from_file = None
         self.sampling_file_name = None
         self.datasets = datasets
-        self.quora_data_files = [path + 'datasets/train100k.csv', path + 'datasets/test.csv']
+        self.quora_data_files = [path + 'datasets/train140k.csv', path + 'datasets/test.csv']
 
         if sentences is None:
             self.read_train_test_dataset()
@@ -123,7 +123,7 @@ class BatchLoader:
         else:
             return input
 
-    def next_batch_from_file(self, batch_size, file_name, return_sentences=False):
+    def next_batch_from_file(self, batch_size, file_name='quora_test', return_sentences=False):
         if self.sampling_file_name is None \
             or self.sampling_file_name != file_name \
             or self.df_from_file is None:

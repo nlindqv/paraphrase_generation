@@ -12,11 +12,10 @@ from model.parametersGAN import Parameters as ParametersGAN
 from model.paraphraser import Paraphraser
 from model.generator import Generator
 
-def sample_with_input_file(batch_loader, paraphraser, args, input_file, input_only=False):
+def sample_with_input_file(batch_loader, paraphraser, args):
     result, target, source, i = [], [] , [],  0
     while True:
-        next_batch = batch_loader.next_batch_from_file(batch_size=1,
-         file_name=input_file, return_sentences=True)
+        next_batch = batch_loader.next_batch_from_file(batch_size=1, return_sentences=True)
 
         if next_batch is None:
             break
@@ -24,18 +23,19 @@ def sample_with_input_file(batch_loader, paraphraser, args, input_file, input_on
         input, sentences = next_batch
         input = [var.cuda() if args.use_cuda else var for var in input]
 
-        result += [paraphraser.sample_with_input(batch_loader,
-                                 args.seq_len,
-                                 args.use_cuda,
-                                 args.use_mean,
-                                input, input_only=input_only)]
+        if paraphraser.params.use_two_path_loss:
+            result += [paraphraser.sample_with_input(batch_loader,
+                                args.seq_len, args.use_cuda, input)]
+        else:
+            result += [paraphraser.sample_from_normal(batch_loader,
+                                args.seq_len, args.use_cuda, input)]
 
         target += [' '.join(sentences[1][0])]
         source += [' '.join(sentences[0][0])]
         if i % 1000 == 0:
             print(i)
-            print('source : ', ' '.join(sentences[0][0]))
-            print('target : ', ' '.join(sentences[1][0]))
+            print('source : ', source[-1])
+            print('target : ', target[-1])
             print('sampled : ', result[-1])
 
         i += 1

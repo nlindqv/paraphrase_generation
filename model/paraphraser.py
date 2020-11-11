@@ -188,7 +188,7 @@ class Paraphraser(nn.Module):
 
         return validate
 
-    def sample_with_input(self, batch_loader, seq_len, use_cuda, use_mean, input, input_only=False):
+    def sample_with_input(self, batch_loader, seq_len, use_cuda, input):
         [encoder_input_source, encoder_input_target, decoder_input_source, _, _] = input
 
         encoder_input = [encoder_input_source, encoder_input_target]
@@ -196,22 +196,17 @@ class Paraphraser(nn.Module):
         # encode
         [batch_size, _, _] = encoder_input[0].size()
 
-        if input_only:
-            mu, logvar = self.encoder(encoder_input[0], None)
-        else:
-            mu, logvar = self.encoder(encoder_input[0], encoder_input[1])
+        mu, logvar = self.encoder(encoder_input[0], None)
+
         std = t.exp(0.5 * logvar)
 
-        if use_mean:
-            z = mu
-        else:
-            z = Variable(t.randn([batch_size, self.params.latent_variable_size]))
-            if use_cuda:
-                z = z.cuda()
-            z = z * std + mu
+
+        z = Variable(t.randn([batch_size, self.params.latent_variable_size]))
+        if use_cuda:
+            z = z.cuda()
+        z = z * std + mu
 
         initial_state = self.decoder.build_initial_state(decoder_input_source)
-
         decoder_input = batch_loader.get_raw_input_from_sentences([batch_loader.go_label])
 
         result = ''
@@ -221,7 +216,6 @@ class Paraphraser(nn.Module):
 
             logits, initial_state = self.decoder(None, decoder_input, z, 0.0, initial_state)
             logits = logits.view(-1, self.params.vocab_size)
-            # prediction = F.softmax(logits)
             prediction = F.softmax(logits, dim=-1)
             # word = batch_loader.likely_word_from_distribution(prediction.data.cpu().numpy()[-1])
             word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[-1])
@@ -233,19 +227,20 @@ class Paraphraser(nn.Module):
 
         return result
 
-    def sample_with_pair(self, batch_loader, seq_len, use_cuda, source_sent, target_sent, input_only=False):
+    def sample_with_pair(self, batch_loader, seq_len, use_cuda, source_sent, target_sent):
         input = batch_loader.input_from_sentences([[source_sent], [target_sent]])
         input = [var.cuda() if use_cuda else var for var in input]
-        return self.sample_with_input(batch_loader, seq_len, use_cuda, False, input, input_only)
+        return self.sample_with_input(batch_loader, seq_len, use_cuda, input)
 
     def sample_from_normal(self, batch_loader, seq_len, use_cuda, input):
         [_, _, decoder_input_source, _, _] = input
         [batch_size, _, _] = decoder_input_source.size()
+
         z = Variable(t.randn([batch_size, self.params.latent_variable_size]))
         if use_cuda:
             z = z.cuda()
-        initial_state = self.decoder.build_initial_state(decoder_input_source)
 
+        initial_state = self.decoder.build_initial_state(decoder_input_source)
         decoder_input = batch_loader.get_raw_input_from_sentences([batch_loader.go_label])
 
         result = ''

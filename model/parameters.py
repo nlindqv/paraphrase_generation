@@ -20,7 +20,5 @@ class Parameters:
 
         self.use_two_path_loss = use_two_path_loss
 
-        self.lambdas = [1, 0.5, 0.01]
-
     def get_kld_coef(self, i):
         return self.kld_penalty_weight * (math.tanh((i - 3500)/1000) + 1)/2.0

@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 import argparse
 import os
+import sys
+import time
 
 import numpy as np
 import torch as t
 from torch.optim import Adam
-from torch.autograd import Variable
+import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
+from torch.cuda import amp
 
 import sample
 from utils.batch_loader import BatchLoader
@@ -14,119 +18,199 @@ from utils.rollout import Rollout
 from model.parametersGAN import Parameters
 from model.generator import Generator
 from model.discriminator import Discriminator
+import gc
 
-# iterations = 200000
-# use_trained = False
-# converged = False
-# lr = 0.0001
-# warmup_step = 10000
-# batch_size = 32
-# use_cuda = False
 lambdas = [0.5, 0.5, 0.01]
-# dropout = 0.3
+rollout_num = 8
+
+def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader, scaler):
+    def train(i, batch_size, use_cuda, dropout):
+        input = batch_loader.next_batch(batch_size, 'train')
+        input = [var.cuda() if use_cuda else var for var in input]
+
+        [encoder_input_source,
+         encoder_input_target,
+         decoder_input_source,
+         decoder_input_target, target] = input
+
+        target = target.view(-1)
+
+        g_optim.zero_grad()
+
+        with amp.autocast():
+            (logits, logits2), _, kld = generator(dropout,
+                    (encoder_input_source, encoder_input_target),
+                    (decoder_input_source, decoder_input_target),
+                    z=None, use_cuda=use_cuda)
+
+            logits = logits.view(-1, generator.params.vocab_size)
+            logits2 = logits2.view(-1, generator.params.vocab_size)
+            ce_1 = F.cross_entropy(logits, target)
+            ce_2 = F.cross_entropy(logits2, target)
+
+            # Generate fake data
+            prediction = F.softmax(logits, dim=-1)
+            samples = prediction.multinomial(1).view(batch_size, -1)
+            gen_samples = batch_loader.embed_batch_from_index(samples)
+
+            if use_cuda:
+                gen_samples = gen_samples.cuda()
+
+            rewards = rollout.reward(gen_samples, [encoder_input_source, encoder_input_target], decoder_input_source, use_cuda, batch_loader)
+            rewards = Variable(t.tensor(rewards))
+            if use_cuda:
+                rewards = rewards.cuda()
+            neg_lik = F.cross_entropy(logits, target, reduction='none')
+
+            dg_loss = t.mean(neg_lik * rewards.flatten())
+
+            g_loss = lambda1 * ce_1 + lambda1 * kld + lambda2 * ce_2 + lambda3 * dg_loss
 
 
+        scaler.scale(g_loss).backward()
+        scaler.unscale_(g_optim)
+        t.nn.utils.clip_grad_norm_(generator.learnable_parameters(), 10)
+        scaler.step(g_optim)
+        scaler.update()
+
+        # Train discriminator with real and fake data
+        data = t.cat([encoder_input_target, gen_samples], dim=0)
+
+        labels = t.zeros(2*batch_size)
+        labels[:batch_size] = 1
+
+        if use_cuda:
+            labels = labels.cuda()
+            data = data.cuda()
 
 
-def validate(batch_loader, batch_size, use_cuda, need_samples=False):
-    # Sample a batch of {s_o, s_p} from dataset
-    if need_samples:
-        input, sentences = batch_loader.next_batch(batch_size, 'test', return_sentences=True)
-        sentences = [[' '.join(s) for s in q] for q in sentences]
-    else:
-        input = batch_loader.next_batch(batch_size, 'test')
+        d_optim.zero_grad()
+        with amp.autocast():
+            d_logits = discriminator(data)
+            d_loss = F.binary_cross_entropy(d_logits, labels)
 
-    input = [var.cuda() if use_cuda else var for var in input]
+        scaler.scale(d_loss).backward()
+        scaler.unscale_(d_optim)
+        t.nn.utils.clip_grad_norm_(discriminator.learnable_parameters(), 5)
+        scaler.step(d_optim)
+        scaler.update()
 
-    [encoder_input_source,
-    encoder_input_target,
-    decoder_input_source,
-    decoder_input_target, target] = input
+        return (ce_1, ce_2, dg_loss, d_loss), kld
 
-    # Train Generator
-    logits, _, kld = generator(0.,
-            (encoder_input_source, encoder_input_target),
-            (decoder_input_source, decoder_input_target),
-            z=None, use_cuda=use_cuda)
+    return train
 
-    logits = logits.view(2, -1, parameters.vocab_size)
-    target = target.view(-1)
-    ce_1 = F.cross_entropy(logits[0], target)
-    ce_2 = F.cross_entropy(logits[1], target)
+@t.no_grad()
+def validater(generator, discriminator, rollout, batch_loader):
+    def get_samples(logits, target):
+        '''
+        logits: [batch, seq_len, vocab_size]
+        targets: [batch, seq_len]
+        '''
+        prediction = F.softmax(logits, dim=-1).data.cpu().numpy()
 
-    # Sample a sequence to feed into discriminator
-    # prediction = [batch_size, seq_len, vocab_size]
-    prediction = F.softmax(logits[0].view(batch_size, -1, parameters.vocab_size), dim=-1).data.cpu().numpy()
+        target = target.data.cpu().numpy()
 
-    samples = []
-    if need_samples:
-        [s1, s2] = sentences
-        sampled = []
-    else:
-        [s1, s2] = (None, None)
-        sampled = None
-    for i in range(prediction.shape[0]):
-        samples.append([batch_loader.sample_word_from_distribution(d)
-            for d in prediction[i]])
-        if need_samples:
+        sampled, expected = [], []
+        for i in range(prediction.shape[0]):
             sampled  += [' '.join([batch_loader.sample_word_from_distribution(d)
-                             for d in prediction[i]])]
+                for d in prediction[i]])]
+            expected += [' '.join([batch_loader.get_word_by_idx(idx) for idx in target[i]])]
 
-    gen_samples = batch_loader.embed_batch(samples)
-    gen_samples = t.Tensor(gen_samples)
+        return sampled, expected
 
-    rewards = rollout.reward(gen_samples, 2, input, use_cuda, batch_loader)
-    rewards = Variable(t.tensor(rewards))
-    neg_lik = F.cross_entropy(logits[0], target, size_average=False, reduce=False)
+    @t.no_grad()
+    def validate(batch_size, use_cuda, need_samples=False):
+        if need_samples:
+            input, sentences = batch_loader.next_batch(batch_size, 'test', return_sentences=True)
+            sentences = [[' '.join(s) for s in q] for q in sentences]
+        else:
+            input = batch_loader.next_batch(batch_size, 'test')
 
-    dg_loss = t.mean(neg_lik * rewards.flatten())
+        input = [var.cuda() if use_cuda else var for var in input]
 
-    # Train discriminator with real and fake data
-    data = t.cat([encoder_input_target, gen_samples], dim=0)
+        [encoder_input_source,
+         encoder_input_target,
+         decoder_input_source,
+         decoder_input_target, target] = input
 
-    labels = t.zeros(2*batch_size)
-    labels[:batch_size] = 1
+        (logits, logits2), _, kld = generator(0., (encoder_input_source, encoder_input_target),
+                                (decoder_input_source, decoder_input_target),
+                                z=None, use_cuda=use_cuda)
 
-    d_logits = discriminator(data)
-    d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
+        target = target.view(-1)
+        logits = logits.view(-1, generator.params.vocab_size)
+        logits2 = logits2.view(-1, generator.params.vocab_size)
+        ce_1 = F.cross_entropy(logits, target)
+        ce_2 = F.cross_entropy(logits2, target)
+        if need_samples:
+            [s1, s2] = sentences
+            sampled = []
+        else:
+            s1, s2 = (None, None)
+            sampled = None
 
-    return (ce_1, ce_2, kld, dg_loss, d_loss), (sampled, s1, s2)
+        prediction = F.softmax(logits, dim=-1)
+        samples = prediction.multinomial(1).view(batch_size, -1)
+        if need_samples:
+            for i in range(samples.size(0)):
+                sampled += [' '.join(batch_loader.get_word_by_idx(idx) for idx in samples[i])]
+        gen_samples = batch_loader.embed_batch_from_index(samples)
+
+        # gen_samples, logits_gen = generator.sample_seq(batch_loader, input, args.use_cuda)
 
 
+        if use_cuda:
+            gen_samples = gen_samples.cuda()
+
+        rewards = rollout.reward(gen_samples, [encoder_input_source, encoder_input_target], decoder_input_source, use_cuda, batch_loader)
+        rewards = Variable(t.tensor(rewards))
+
+        if use_cuda:
+            rewards = rewards.cuda()
+        neg_lik = F.cross_entropy(logits, target, reduction='none')
+        dg_loss = t.mean(neg_lik * rewards.flatten())
 
 
+        # Train discriminator with real and fake data
+        data = t.cat([encoder_input_target, gen_samples], dim=0)
 
+        labels = t.zeros(2*batch_size)
+        labels[:batch_size] = 1
 
+        if use_cuda:
+            labels = labels.cuda()
+            data = data.cuda()
+
+        d_logits = discriminator(data)
+        d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
+
+        return (ce_1, ce_2, kld, dg_loss, d_loss), (sampled, s1, s2)
+
+    return validate
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Paraphraser')
-    parser.add_argument('--num-iterations', type=int, default=300000, metavar='NI',
-                        help='num iterations (default: 60000)')
-    parser.add_argument('--batch-size', type=int, default=32, metavar='BS',
-                        help='batch size (default: 32)')
-    parser.add_argument('-cuda', '--use-cuda', type=bool, default=False, metavar='CUDA',
-                        help='use cuda (default: True)')
-    parser.add_argument('--learning-rate', type=float, default=0.0001, metavar='LR',
-                        help='learning rate (default: 0.0001)')
-    parser.add_argument('--dropout', type=float, default=0.3, metavar='DR',
-                        help='dropout (default: 0.3)')
-    parser.add_argument('-ut', '--use-trained', type=bool, default=False, metavar='UT',
-                        help='load pretrained model (default: False)')
-    parser.add_argument('-m', '--model-name', default='', metavar='MN',
-                        help='name of model to save (default: "")')
-    parser.add_argument('--warmup-step', default=10000, type=float, metavar='WS',
-                        help='L2 regularization penalty (default: 0.0)')
-    parser.add_argument('--use-quora', default=False, type=bool, metavar='quora',
-                    help='if include quora dataset (default: False)')
-    parser.add_argument('--interm-sampling', default=True, type=bool, metavar='IS',
-                    help='if sample while training (default: False)')
-
-    parser.register('type', 'bool', lambda v: v.lower() in ["true", "t", "1"])
+    parser.add_argument('--num-iterations', type=int, default=300000, help='num iterations (default: 60000)')
+    parser.add_argument('--batch-size', type=int, default=32, help='batch size (default: 32)')
+    parser.add_argument('--use-cuda', type=bool, default=False, help='use cuda (default: True)')
+    parser.add_argument('--learning-rate', type=float, default=0.0001, help='learning rate (default: 0.0001)')
+    parser.add_argument('--dropout', type=float, default=0.3, help='dropout (default: 0.3)')
+    parser.add_argument('--use-trained', type=bool, default=False, help='load pretrained model (default: False)')
+    parser.add_argument('--model-name', default='', help='name of model to save (default: "")')
+    parser.add_argument('--warmup-step', default=10000, type=float, help='L2 regularization penalty (default: 0.0)')
+    parser.add_argument('--interm-sampling', default=True, type=bool, help='if sample while training (default: False)')
     args = parser.parse_args()
+
+    if args.use_cuda and not t.cuda.is_available():
+        print('Found no GPU, args.use_cuda = False ')
+        args.use_cuda = False
 
     batch_loader = BatchLoader()
     parameters = Parameters(batch_loader.max_seq_len,
                             batch_loader.vocab_size)
+
+    generator = Generator(parameters)
+    discriminator = Discriminator(parameters)
 
     # Loss main path
     ce_result_valid, ce_result_train, ce_cur_train = [], [], []
@@ -139,118 +223,68 @@ if __name__ == "__main__":
     # Discriminator loss
     d_result_valid, d_result_train, d_cur_train = [], [], []
 
-
-
-    print(f'Initiate generator...')
     generator = Generator(parameters)
-    print(f'Initiate discriminator...')
     discriminator = Discriminator(parameters)
+
+    print(f'Number of parameters in generator: {sum(p.numel() for p in generator.learnable_parameters())}')
+    print(f'Number of parameters in discriminator: {sum(p.numel() for p in discriminator.learnable_parameters())}')
+
+    # Create locations to store logs
+    if not os.path.isdir('logs/'+ args.model_name):
+        os.mkdir('logs/'+ args.model_name)
+    if args.interm_sampling and not os.path.isdir('logs/'+ args.model_name + '/intermediate'):
+        os.mkdir('logs/'+ args.model_name + '/intermediate')
+
 
     if args.use_trained:
         generator.load_state_dict(t.load('saved_models/trained_generator_' + args.model_name))
         discriminator.load_state_dict(t.load('saved_models/trained_discriminator_' + args.model_name))
+        ce_result_valid = list(np.load('logs/{}/ce_result_valid.npy'.format(args.model_name)))
+        ce_result_train = list(np.load('logs/{}/ce_result_train.npy'.format(args.model_name)))
+        ce2_result_train = list(np.load('logs/{}/ce2_result_train.npy'.format(args.model_name)))
+        ce2_result_valid = list(np.load('logs/{}/ce2_result_valid.npy'.format(args.model_name)))
+        kld_result_valid = list(np.load('logs/{}/kld_result_valid.npy'.format(args.model_name)))
+        kld_result_train = list(np.load('logs/{}/kld_result_train.npy'.format(args.model_name)))
+        dg_result_train = list(np.load('logs/{}/dg_result_train.npy'.format(args.model_name)))
+        dg_result_valid = list(np.load('logs/{}/dg_result_valid.npy'.format(args.model_name)))
+        d_result_train = list(np.load('logs/{}/d_result_train.npy'.format(args.model_name)))
+        d_result_valid = list(np.load('logs/{}/d_result_valid.npy'.format(args.model_name)))
 
-    print(f'Initiate optimizers...')
+    if args.use_cuda:
+        generator = generator.cuda()
+        discriminator = discriminator.cuda()
+
     g_optim = Adam(generator.learnable_parameters(), args.learning_rate)
     d_optim = Adam(discriminator.learnable_parameters(), args.learning_rate)
+    # [generator, discriminator], [g_optim, d_optim] = amp.initialize([generator, discriminator], [g_optim, d_optim], opt_level="O1", num_losses=2)
 
-    print(f'Initiate rollout...')
-    rollout = Rollout(generator, discriminator, 0.8)
+    rollout = Rollout(generator, discriminator, 0.8, rollout_num)
 
-    # g_criterion = nn.CrossEntropyLoss()
-    # d_criterion = nn.BCEWithLogitsLoss()
+    # discriminator, d_optim = amp.initialize(discriminator, d_optim, opt_level="O1")
+    scaler = amp.GradScaler()
 
-    print(f'Start adversarial training...')
+    train_step = trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader, scaler)
+    validate = validater(generator, discriminator, rollout, batch_loader)
+
+
+    converge_criterion, converge_count = 10, 0
+    best_total_loss = np.inf
+
+    start = time.time_ns()
+
     for iteration in range(args.num_iterations):
-        # Warmup training
-        if iteration <= args.warmup_step:
-            lambda3 = iteration / (1. * args.warmup_step) * lambdas[2]
-            lambda2 = iteration / (1. * args.warmup_step) * lambdas[1]
+        if iteration <= 10000:
+            lambda3 = iteration / (1. * 10000) * lambdas[2]
+            lambda2 = iteration / (1. * 10000) * lambdas[1]
             lambda1 = 1 - lambda2
 
-        # Sample a batch of {s_o, s_p} from dataset
-        input = batch_loader.next_batch(args.batch_size, 'train')
-        input = [var.cuda() if args.use_cuda else var for var in input]
 
-        [encoder_input_source,
-         encoder_input_target,
-         decoder_input_source,
-         decoder_input_target, target] = input
+        (ce_1, ce_2, dg_loss, d_loss), kld = train_step(iteration, args.batch_size, args.use_cuda, args.dropout)
+        t.cuda.empty_cache()
 
-        # print(f'Encoder shape: {encoder_input_source.size()}')
-        # for i in range(encoder_input_source.size(0)):
-        #     print(f'Encoder[{i}] shape: {encoder_input_source[i].size()}')
-        #     print(f'{sen[0][i]}')
-        #     print(f'Encoder[{i}]: {encoder_input_source[i]}')
-
-        # Train Generator
-        logits, _, kld = generator(args.dropout,
-                (encoder_input_source, encoder_input_target),
-                (decoder_input_source, decoder_input_target),
-                z=None, use_cuda=args.use_cuda)
-        # print(f'Logits shape: {logits.shape}')
-
-        logits = logits.view(2, -1, parameters.vocab_size)
-        target = target.view(-1)
-        ce_1 = F.cross_entropy(logits[0], target)
-        ce_2 = F.cross_entropy(logits[1], target)
-
-        # print(f'Logits1 shape: {logits[0].shape}')
-
-        # Sample a sequence to feed into discriminator
-        # prediction = [batch_size, seq_len, vocab_size]
-        prediction = F.softmax(logits[0].view(args.batch_size, -1, parameters.vocab_size), dim=-1).data.cpu().numpy()
-        # print(f'Prediction shape: {prediction.shape}')
-        # print(f'Prediction shape 0: {prediction.shape[0]}')
-        # prediction = t.Tensor(prediction).view(batch_size, -1, parameters.vocab_size)
-        samples = []
-        for i in range(prediction.shape[0]):
-            samples.append([batch_loader.sample_word_from_distribution(d)
-                for d in prediction[i]])
-        # samples = [batch_size, seq_len]
-        # gen_samples = [batch_size, max_seq_len, 300]
-        # print(f'Samples shape: {np.shape(samples)}')
-
-        gen_samples = batch_loader.embed_batch(samples)
-        gen_samples = t.Tensor(gen_samples)
-        # print(f'Gen_samples shape: {np.shape(gen_samples)}')
-
-        rewards = rollout.reward(gen_samples, 8, input, args.use_cuda, batch_loader)
-        rewards = Variable(t.tensor(rewards))
-        neg_lik = F.cross_entropy(logits[0], target, size_average=False, reduce=False)
-
-        # print(f'Reward shape: {rewards.size()}, neg_lik shape: {neg_lik.size()}')
-        dg_loss = t.mean(neg_lik * rewards.flatten())
-
-        g_loss = lambda1 * ce_1 \
-                + lambda2 * ce_2 \
-                + lambda3 * dg_loss \
-                + lambda1 * kld
-
-        # print(f'Update generator parameters... (loss: {g_loss})')
-        g_optim.zero_grad()
-        g_loss.backward()
-        t.nn.utils.clip_grad_norm_(generator.learnable_parameters(), 10)
-        g_optim.step()
-
-        # Train discriminator with real and fake data
-        data = t.cat([encoder_input_target, gen_samples], dim=0)
-
-        labels = t.zeros(2*args.batch_size)
-        labels[:args.batch_size] = 1
-        # labels[batch_size:, 0] = 1
-        # print(f'Labels: {labels}')
-
-        d_logits = discriminator(data)
-        d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
-
-        # print(f'Update discriminator parameters... (loss: {d_loss})')
-        # Update discriminator
-        d_optim.zero_grad()
-        d_loss.backward()
-        t.nn.utils.clip_grad_norm_(discriminator.learnable_parameters(), 5)
-        d_optim.step()
-
+        if iteration % 10 == 0:
+            print(f'Time per iteration: {((time.time_ns() - start) / (10 ** 6)) / 10} ms')
+            start = time.time_ns()
 
         # Store losses
         ce_cur_train += [ce_1.data.cpu().numpy()]
@@ -258,6 +292,7 @@ if __name__ == "__main__":
         kld_cur_train += [kld.data.cpu().numpy()]
         dg_cur_train += [dg_loss.data.cpu().numpy()]
         d_cur_train += [d_loss.data.cpu().numpy()]
+
 
         # validation
         if iteration % 500 == 0:
@@ -290,8 +325,7 @@ if __name__ == "__main__":
             # averaging across several batches
             ce_1, ce_2, kld, dg_loss, d_loss = [], [], [], [], []
             for i in range(20):
-
-                (c1, c2, kl, dg, d), _ = validate(batch_loader, args.batch_size, args.use_cuda)
+                (c1, c2, kl, dg, d), _ = validate(args.batch_size, args.use_cuda)
                 ce_1 += [c1.data.cpu().numpy()]
                 ce_2 += [c2.data.cpu().numpy()]
                 kld += [kl.data.cpu().numpy()]
@@ -311,6 +345,17 @@ if __name__ == "__main__":
             dg_result_valid += [dg_loss]
             d_result_valid += [d_loss]
 
+            total_loss = ce_1 + ce_2 + kld + dg_loss
+            if iteration > 10000:
+                if np.isinf(best_total_loss):
+                    best_total_loss = total_loss
+                else:
+                    if total_loss >= best_total_loss:
+                        converge_count += 1
+                    else:
+                        best_total_loss = total_loss
+                        converge_count = 0
+
             print('\n')
             print('------------VALID-------------')
             print('--------CROSS-ENTROPY---------')
@@ -325,63 +370,49 @@ if __name__ == "__main__":
             print(d_loss)
             print('------------------------------')
 
-            _, (sampled, s1, s2) = validate(batch_loader, 2, args.use_cuda, need_samples=True)
+            _, (sampled, s1, s2) = validate(2, args.use_cuda, need_samples=True)
 
             for i in range(len(sampled)):
                 result = generator.sample_with_pair(batch_loader, 20, args.use_cuda, s1[i], s2[i])
-                result2 = generator.sample_with_pair(batch_loader, 20, args.use_cuda, s1[i], s2[i], input_only=True)
 
                 print('source: ' + s1[i])
                 print('target: ' + s2[i])
-                print('valid: ' + sampled[i])
                 print('sampled: ' + result)
-                print('sampled (no ref): ' + result2)
                 print('...........................')
 
         # save model
-        if (iteration % 10000 == 0 and iteration != 0) or iteration == (args.num_iterations - 1):
+        if (iteration % 10000 == 0 and iteration != 0) or iteration == (args.num_iterations - 1) or (converge_count == converge_criterion):
             t.save(generator.state_dict(), 'saved_models/trained_generator_' + args.model_name)
             t.save(discriminator.state_dict(), 'saved_models/trained_discrminator_' + args.model_name)
-            np.save('logs/ce_result_valid_{}.npy'.format(args.model_name), np.array(ce_result_valid))
-            np.save('logs/ce_result_train_{}.npy'.format(args.model_name), np.array(ce_result_train))
-            np.save('logs/kld_result_valid_{}'.format(args.model_name), np.array(kld_result_valid))
-            np.save('logs/kld_result_train_{}'.format(args.model_name), np.array(kld_result_train))
-            np.save('logs/ce2_result_valid_{}.npy'.format(args.model_name), np.array(ce2_result_valid))
-            np.save('logs/ce2_result_train_{}.npy'.format(args.model_name), np.array(ce2_result_train))
-            np.save('logs/dg_result_valid_{}.npy'.format(args.model_name), np.array(dg_result_valid))
-            np.save('logs/dg_result_train_{}.npy'.format(args.model_name), np.array(dg_result_train))
-            np.save('logs/d_result_valid_{}.npy'.format(args.model_name), np.array(d_result_valid))
-            np.save('logs/d_result_train_{}.npy'.format(args.model_name), np.array(d_result_train))
+            np.save('logs/{}/ce_result_valid.npy'.format(args.model_name), np.array(ce_result_valid))
+            np.save('logs/{}/ce_result_train.npy'.format(args.model_name), np.array(ce_result_train))
+            np.save('logs/{}/kld_result_valid'.format(args.model_name), np.array(kld_result_valid))
+            np.save('logs/{}/kld_result_train'.format(args.model_name), np.array(kld_result_train))
+            np.save('logs/{}/ce2_result_valid.npy'.format(args.model_name), np.array(ce2_result_valid))
+            np.save('logs/{}/ce2_result_train.npy'.format(args.model_name), np.array(ce2_result_train))
+            np.save('logs/{}/dg_result_valid.npy'.format(args.model_name), np.array(dg_result_valid))
+            np.save('logs/{}/dg_result_train.npy'.format(args.model_name), np.array(dg_result_train))
+            np.save('logs/{}/d_result_valid.npy'.format(args.model_name), np.array(d_result_valid))
+            np.save('logs/{}/d_result_train.npy'.format(args.model_name), np.array(d_result_train))
 
         #interm sampling
-        if (iteration % 20000 == 0 and iteration != 0) or iteration == (args.num_iterations - 1):
+        if (iteration % 10000 == 0 and iteration != 0) or iteration == (args.num_iterations - 1) or (converge_count == converge_criterion):
             if args.interm_sampling:
-                sample_file = 'quora_test'
-                args.use_mean = False
                 args.seq_len = 30
 
-                (result, result2), target, source = sample.sample_with_input_file(batch_loader,
-                                generator, args, sample_file, True)
+                result, target, source = sample.sample_with_input_file(batch_loader, generator, args)
 
-                sampled_file_dst = 'logs/intermediate/sampled_out_{}k_{}{}.txt'.format(
-                                            iteration//1000, sample_file, args.model_name)
-                target_file_dst = 'logs/intermediate/target_out_{}k_{}{}.txt'.format(
-                                            iteration//1000, sample_file, args.model_name)
-                source_file_dst = 'logs/intermediate/source_out_{}k_{}{}.txt'.format(
-                                            iteration//1000, sample_file, args.model_name)
-                sampled2_file_dst = 'logs/intermediate/sampled2_out_{}k_{}{}.txt'.format(
-                                            iteration//1000, sample_file, args.model_name)
-                                            # sampled2 = no reference
-                np.save(sampled_file_dst, np.array(result))
-                np.save(sampled2_file_dst, np.array(result))
-                np.save(target_file_dst, np.array(target))
-                np.save(source_file_dst, np.array(source))
+                sampled_file_dst = 'logs/{}/intermediate/sampled_{}k.txt'.format(args.model_name, iteration//1000)
+                target_file_dst = 'logs/{}/intermediate/target_{}k.txt'.format(args.model_name, iteration//1000)
+                source_file_dst = 'logs/{}/intermediate/source_{}k.txt'.format(args.model_name, iteration//1000)
 
+                np.savetxt(sampled_file_dst, np.array(result), delimiter='\n', fmt='%s')
+                np.savetxt(target_file_dst, np.array(target), delimiter='\n', fmt='%s')
+                np.savetxt(source_file_dst, np.array(source), delimiter='\n', fmt='%s')
 
                 print('------------------------------')
                 print('results saved to: ')
                 print(sampled_file_dst)
-                print(sampled2_file_dst)
                 print(target_file_dst)
                 print(source_file_dst)
 

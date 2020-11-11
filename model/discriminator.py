@@ -6,12 +6,13 @@ class Discriminator(nn.Module):
     def __init__(self, params):
         super(Discriminator, self).__init__()
         self.params = params
-        self.lstm = nn.LSTM(input_size=300,
+        self.lstm = nn.LSTM(input_size=self.params.word_embed_size,
                         hidden_size=self.params.discriminator_rnn_size,
                         num_layers=self.params.discriminator_num_layers,
                         batch_first=True,
                         dropout=0.3,
                         bidirectional=True)
+        self.lstm.flatten_parameters()
         self.fc = nn.Linear(4*self.params.discriminator_rnn_size, self.params.discriminator_rnn_size)
         self.relu = nn.ReLU()
         self.out = nn.Linear(self.params.discriminator_rnn_size, 1)
