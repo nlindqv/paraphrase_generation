@@ -87,7 +87,7 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader, s
         d_optim.zero_grad()
         with amp.autocast():
             d_logits = discriminator(data)
-            d_loss = F.binary_cross_entropy(d_logits, labels)
+            d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
 
         scaler.scale(d_loss).backward()
         scaler.unscale_(d_optim)
