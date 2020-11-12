@@ -57,7 +57,7 @@ class Rollout(object):
 				# time_s += (time.time_ns() - t0)
 				# t0 = time.time_ns()
 
-				reward = f.sigmoid(self.discriminator(samples)) # (batch_size, 1)
+				reward = t.sigmoid(self.discriminator(samples)) # (batch_size, 1)
 				reward = reward.data.cpu().numpy()
 				if i == 0:
 					initial_states.append(next_initial_state)
@@ -69,7 +69,7 @@ class Rollout(object):
 			if use_cuda:
 				x = x.cuda()
 
-			reward = f.sigmoid(self.discriminator(x))
+			reward = t.sigmoid(self.discriminator(x))
 			reward = reward.data.cpu().numpy() # Detach from computational graph
 			if i == 0:
 				rewards.append(reward)
