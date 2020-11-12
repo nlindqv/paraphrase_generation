@@ -301,6 +301,7 @@ if __name__ == "__main__":
 
             ce_cur_train, ce2_cur_train, kld_cur_train, dg_cur_train, d_cur_train = [], [], [], [], []
 
+            rollout.update_params()
             print('\n')
             print('------------TRAIN-------------')
             print('----------ITERATION-----------')
