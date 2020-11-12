@@ -289,6 +289,7 @@ if __name__ == "__main__":
         dg_cur_train += [dg_loss.data.cpu().numpy()]
         d_cur_train += [d_loss.data.cpu().numpy()]
 
+        rollout.update_params()
 
         # validation
         if iteration % 500 == 0:
@@ -301,7 +302,6 @@ if __name__ == "__main__":
 
             ce_cur_train, ce2_cur_train, kld_cur_train, dg_cur_train, d_cur_train = [], [], [], [], []
 
-            rollout.update_params()
             print('\n')
             print('------------TRAIN-------------')
             print('----------ITERATION-----------')
