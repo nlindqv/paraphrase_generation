@@ -21,7 +21,7 @@ from model.discriminator import Discriminator
 import gc
 
 lambdas = [0.5, 0.5, 0.01]
-rollout_num = 8
+rollout_num =putput
 
 def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader, scaler):
     def train(i, batch_size, use_cuda, dropout):
@@ -192,7 +192,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Paraphraser')
     parser.add_argument('--num-iterations', type=int, default=300000, help='num iterations (default: 60000)')
     parser.add_argument('--batch-size', type=int, default=32, help='batch size (default: 32)')
-    parser.add_argument('--use-cuda', type=bool, default=False, help='use cuda (default: True)')
+    parser.add_argument('--use-cuda', type=bool, default=True, help='use cuda (default: True)')
     parser.add_argument('--learning-rate', type=float, default=0.0001, help='learning rate (default: 0.0001)')
     parser.add_argument('--dropout', type=float, default=0.3, help='dropout (default: 0.3)')
     parser.add_argument('--use-trained', type=bool, default=False, help='load pretrained model (default: False)')
@@ -280,11 +280,7 @@ if __name__ == "__main__":
 
 
         (ce_1, ce_2, dg_loss, d_loss), kld = train_step(iteration, args.batch_size, args.use_cuda, args.dropout)
-        t.cuda.empty_cache()
-
-        if iteration % 10 == 0:
-            print(f'Time per iteration: {((time.time_ns() - start) / (10 ** 6)) / 10} ms')
-            start = time.time_ns()
+        # t.cuda.empty_cache()
 
         # Store losses
         ce_cur_train += [ce_1.data.cpu().numpy()]

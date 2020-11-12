@@ -5,7 +5,7 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-
+from torch.cuda import amp
 from .decoder import Decoder
 from .encoder import Encoder
 from .highway import Highway
@@ -18,6 +18,7 @@ class Generator(nn.Module):
         self.encoder = Encoder(self.params, self.highway)
         self.decoder = Decoder(self.params, self.highway)
 
+    @amp.autocast()
     def forward(self, drop_prob, encoder_input=None, decoder_input=None,
         z=None, initial_state=None, use_cuda=True):
         """
