@@ -18,7 +18,7 @@ class Generator(nn.Module):
         self.encoder = Encoder(self.params, self.highway)
         self.decoder = Decoder(self.params, self.highway)
 
-    @amp.autocast()
+    # @amp.autocast()
     def forward(self, drop_prob, encoder_input=None, decoder_input=None,
         z=None, initial_state=None, use_cuda=True):
         """

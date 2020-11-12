@@ -21,7 +21,7 @@ from model.discriminator import Discriminator
 import gc
 
 lambdas = [0.5, 0.5, 0.01]
-rollout_num =putput
+rollout_num = 8
 
 def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader, scaler):
     def train(i, batch_size, use_cuda, dropout):

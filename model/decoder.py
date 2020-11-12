@@ -33,8 +33,8 @@ class Decoder(nn.Module):
         input = self.hw1(input)
         input = input.view(batch_size, seq_len, embed_size)
 
-        with amp.autocast():
-            _, cell_state = self.encoding_rnn(input)
+        # with amp.autocast():
+        _, cell_state = self.encoding_rnn(input)
         [h_state, c_state] = cell_state
         h_state = h_state.view(self.params.encoder_num_layers, 2, batch_size, self.params.encoder_rnn_size)[-1]
         c_state = c_state.view(self.params.encoder_num_layers, 2, batch_size, self.params.encoder_rnn_size)[-1]
@@ -81,8 +81,8 @@ class Decoder(nn.Module):
         z = t.cat([z] * seq_len, 1).view(batch_size, seq_len, self.params.latent_variable_size)
         decoder_input = t.cat([decoder_input, z], 2)
 
-        with amp.autocast():
-            rnn_out, final_state = self.decoding_rnn(decoder_input, initial_state)
+        # with amp.autocast():
+        rnn_out, final_state = self.decoding_rnn(decoder_input, initial_state)
 
         rnn_out = rnn_out.contiguous().view(-1, self.params.decoder_rnn_size)
         result = self.fc(rnn_out)

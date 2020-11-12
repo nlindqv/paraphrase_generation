@@ -38,7 +38,7 @@ class Discriminator(nn.Module):
         output = self.relu(output)
         output = self.out(output)
         output = t.squeeze(output, 1)
-        output = t.sigmoid(output)
+        # output = t.sigmoid(output)
 
         return output
 
