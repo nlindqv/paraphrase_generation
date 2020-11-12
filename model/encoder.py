@@ -1,6 +1,7 @@
 import torch as t
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.cuda import amp
 
 class Encoder(nn.Module):
     def __init__(self, params, highway):
@@ -46,7 +47,8 @@ class Encoder(nn.Module):
                 input = input.view(-1, embed_size)
                 input = self.hw1(input)
                 input = input.view(batch_size, seq_len, embed_size)
-                _, state = self.rnns[i](input, state)
+                with amp.autocast():
+                    _, state = self.rnns[i](input, state)
 
         [h_state, c_state] = state
         h_state = h_state.view(self.params.encoder_num_layers, 2, batch_size, self.params.encoder_rnn_size)[-1]
