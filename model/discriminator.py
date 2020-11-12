@@ -18,7 +18,7 @@ class Discriminator(nn.Module):
         self.relu = nn.ReLU()
         self.out = nn.Linear(self.params.discriminator_rnn_size, 1)
 
-    @amp.autocast()
+    # @amp.autocast()
     def forward(self, sentences):
         """
         :param sentences: [batch_size, seq_len, embed_size] tensor
