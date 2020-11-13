@@ -53,7 +53,7 @@ class Rollout(object):
 					# if use_cuda:
 					# 	samples = samples.cuda()
 
-					reward = t.sigmoid(self.discriminator(samples), dim=-1) # (batch_size, 1)
+					reward = t.sigmoid(self.discriminator(samples)) # (batch_size, 1)
 					# reward = reward.data.cpu().numpy()
 					rewards[idx] = reward
 					if i == 0:
