@@ -28,55 +28,56 @@ class Rollout(object):
 			rollout_num : roll-out number
 			input : (batch_size, seq_len, embed_size) input data
 		"""
+		with t.no_grad():
+			[batch_size, seq_len, embed_size] = x.size()
 
-		[batch_size, seq_len, embed_size] = x.size()
+			mu, logvar = self.generator_copy.encoder(encoder_input[0], None)
+			std = t.exp(0.5 * logvar)
 
-		mu, logvar = self.generator_copy.encoder(encoder_input[0], None)
-		std = t.exp(0.5 * logvar)
-
-		z = Variable(t.randn([batch_size, self.generator_copy.params.latent_variable_size]))
-		if use_cuda:
-			z = z.cuda()
-		z = z * std + mu
-
-		initial_states = [self.generator_copy.decoder.build_initial_state(decoder_input_source)]
-		rewards = []
-
-		# time_s = 0
-		# time_d = 0
-		for i in range(self.rollout_num):
-			batch_of_samples = []
-			for l in range(1, seq_len):
-				data = x[:, 0:l, :]
-				# t0 = time.time_ns()
-				# samples = [batch_size, seq_len, embed_size(300)]
-				samples, next_initial_state = self.generator_copy.sample(data, seq_len, z, initial_states[l-1], use_cuda, batch_loader) # (batch_size, sequence_len)
-				if use_cuda:
-					samples = samples.cuda()
-
-				# time_s += (time.time_ns() - t0)
-				# t0 = time.time_ns()
-
-				reward = t.sigmoid(self.discriminator(samples)) # (batch_size, 1)
-				reward = reward.data.cpu().numpy()
-				if i == 0:
-					initial_states.append(next_initial_state)
-					rewards.append(reward)
-				else:
-					rewards[l-1] += reward
-				# time_d += (time.time_ns() - t0)
-
+			z = Variable(t.randn([batch_size, self.generator_copy.params.latent_variable_size]))
 			if use_cuda:
-				x = x.cuda()
+				z = z.cuda()
+			z = z * std + mu
 
-			reward = t.sigmoid(self.discriminator(x))
-			reward = reward.data.cpu().numpy() # Detach from computational graph
-			if i == 0:
-				rewards.append(reward)
-			else:
-				rewards[seq_len-1] += reward
+			initial_states = [self.generator_copy.decoder.build_initial_state(decoder_input_source)]
+			# rewards = []
+			rewards = torch.zeros([self.rollout_num * seq_len, batch_size]).float()
+			if args.use_cuda:
+				rewards.cuda()
+			# time_s = 0
+			# time_d = 0
+			idx = 0
+			for i in range(self.rollout_num):
+				for l in range(1, seq_len):
+					samples, next_initial_state = self.generator_copy.sample(x[:, 0:l, :], seq_len, z, initial_states[l-1], use_cuda, batch_loader) # (batch_size, sequence_len)
+					# if use_cuda:
+					# 	samples = samples.cuda()
 
-		rewards = (np.array(rewards).squeeze().T) / (1. * self.rollout_num) # (batch_size, sequence_len)
+					reward = t.sigmoid(self.discriminator(samples), dim=-1) # (batch_size, 1)
+					# reward = reward.data.cpu().numpy()
+					rewards[idx] = reward
+					if i == 0:
+						initial_states.append(next_initial_state)
+
+					idx += 1
+						# rewards.append(reward)
+					# else:
+						# rewards[l-1] += reward
+					# time_d += (time.time_ns() - t0)
+
+				# if use_cuda:
+					# x = x.cuda()
+
+				reward = t.sigmoid(self.discriminator(x))
+				rewards[idx] = reward
+				# reward = reward.data.cpu().numpy() # Detach from computational graph
+				# if i == 0:
+					# rewards.append(reward)
+				# else:
+					# rewards[seq_len-1] += reward
+
+			rewards = (np.array(rewards).squeeze().T) / (1. * self.rollout_num) # (batch_size, sequence_len)
+			rewards = t.mean(rewards.view(batch_size, seq_len, rollout_num), dim=-1)
 		# print(f'Time spent sampling: {time_s /(10**6)}ms (avg. {time_s /(10**6)/(self.rollout_num)}/rollout)')
 		# print(f'Time spent in discriminator: {time_d /(10**6)}ms (avg. {time_d /(10**6)/(self.rollout_num)}/rollout)')
 

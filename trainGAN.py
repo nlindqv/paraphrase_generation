@@ -49,7 +49,7 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader, s
             ce_2 = F.cross_entropy(logits2, target)
 
             # Generate fake data
-            prediction = F.softmax(logits, dim=-1)
+            prediction = F.softmax(logits2, dim=-1)
             samples = prediction.multinomial(1).view(batch_size, -1)
             gen_samples = batch_loader.embed_batch_from_index(samples)
 
@@ -60,7 +60,7 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader, s
             rewards = Variable(t.tensor(rewards))
             if use_cuda:
                 rewards = rewards.cuda()
-            neg_lik = F.cross_entropy(logits, target, reduction='none')
+            neg_lik = F.cross_entropy(logits2, target, reduction='none')
 
             dg_loss = t.mean(neg_lik * rewards.flatten())
 

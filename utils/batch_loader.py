@@ -252,16 +252,22 @@ class BatchLoader:
 
     def build_fasttext(self, word_dict):
         # create word_vec with fastText vectors
-        if not os.path.exists('word_vec.pkl'):
+        if not os.path.exists('word_vec_norm.pkl'):
             ft = fasttext.load_model('cc.sv.300.bin')
             for word in tqdm(word_dict):
-                self.word_vec[word] = np.array(ft.get_word_vector(word))
-            with open( 'word_vec.pkl', 'wb') as f:
+                vec = np.array(ft.get_word_vector(word))
+                vec = vec / np.sqrt(np.sum(np.power(vec, 2)))
+                self.word_vec[word] = vec
+            with open( 'word_vec_norm.pkl', 'wb') as f:
                 pickle.dump(self.word_vec, f, pickle.HIGHEST_PROTOCOL)
         else:
-            with open( 'word_vec.pkl', 'rb') as f:
+            with open( 'word_vec_norm.pkl', 'rb') as f:
                 self.word_vec = pickle.load(f)
-            # print(self.word_vec['grön'])
+            # print(self.word_vec.shape)
+            # word_vec_norms = np.sqrt(np.sum(np.power(self.word_vec.values(), 2), axis=1))
+            # self.word_vec = self.word_vec / word_vec_norms
+            # print(np.sqrt(np.sum(np.power(self.word_vec['grön'], 2))))
+            # print()
 
     def get_sentences_from_data(self):
         sentences = []
