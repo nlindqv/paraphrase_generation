@@ -21,7 +21,7 @@ from model.discriminator import Discriminator
 import gc
 
 lambdas = [0.5, 0.5, 0.01]
-rollout_num = 1
+rollout_num = 8
 
 def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader, scaler):
     def train(i, batch_size, use_cuda, dropout):
@@ -304,7 +304,7 @@ if __name__ == "__main__":
         rollout.update_params()
 
         # validation
-        if iteration % 500 == 0 and False:
+        if iteration % 500 == 0:
             ce_result_train += [np.mean(ce_cur_train)]
             ce2_result_train += [np.mean(ce2_cur_train)]
             kld_result_train += [np.mean(kld_cur_train)]
