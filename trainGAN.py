@@ -120,6 +120,9 @@ def validater(generator, discriminator, rollout, batch_loader):
 
     @t.no_grad()
     def validate(batch_size, use_cuda, need_samples=False):
+        generator.eval()
+        discriminator.eval()
+
         if need_samples:
             input, sentences = batch_loader.next_batch(batch_size, 'test', return_sentences=True)
             sentences = [[' '.join(s) for s in q] for q in sentences]
@@ -183,6 +186,10 @@ def validater(generator, discriminator, rollout, batch_loader):
 
         d_logits = discriminator(data)
         d_loss = F.binary_cross_entropy_with_logits(d_logits, labels)
+
+        generator.train()
+        discriminator.train()
+
 
         return (ce_1, ce_2, kld, dg_loss, d_loss), (sampled, s1, s2)
 
@@ -273,9 +280,9 @@ if __name__ == "__main__":
     start = time.time_ns()
 
     for iteration in range(args.num_iterations):
-        if iteration <= 10000:
-            lambda3 = iteration / (1. * 10000) * lambdas[2]
-            lambda2 = iteration / (1. * 10000) * lambdas[1]
+        if iteration <= args.warmup_step:
+            lambda3 = iteration / (1. * args.warmup_step) * lambdas[2]
+            lambda2 = iteration / (1. * args.warmup_step) * lambdas[1]
             lambda1 = 1 - lambda2
 
 
