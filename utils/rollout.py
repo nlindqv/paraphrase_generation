@@ -42,7 +42,7 @@ class Rollout(object):
 			initial_states = [self.generator_copy.decoder.build_initial_state(decoder_input_source)]
 			# rewards = []
 			rewards = t.zeros([self.rollout_num * seq_len, batch_size]).float()
-			if args.use_cuda:
+			if use_cuda:
 				rewards.cuda()
 			# time_s = 0
 			# time_d = 0
