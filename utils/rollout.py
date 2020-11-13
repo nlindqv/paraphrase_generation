@@ -67,7 +67,7 @@ class Rollout(object):
 					# x = x.cuda()
 
 			reward = t.sigmoid(self.discriminator(x))
-			rewards[-1] = reward
+			# rewards[-1] = reward
 			reward = reward.data.cpu().numpy() # Detach from computational graph
 			if i == 0:
 				rewards.append(reward)
