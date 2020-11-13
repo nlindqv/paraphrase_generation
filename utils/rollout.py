@@ -41,7 +41,7 @@ class Rollout(object):
 
 			initial_states = [self.generator_copy.decoder.build_initial_state(decoder_input_source)]
 			# rewards = []
-			rewards = t.zeros([self.rollout_num * seq_len, batch_size])
+			rewards = t.zeros([seq_len, batch_size])
 			if use_cuda:
 				rewards.cuda()
 			# time_s = 0
@@ -55,11 +55,11 @@ class Rollout(object):
 
 					reward = t.sigmoid(self.discriminator(samples)) # (batch_size, 1)
 					# reward = reward.data.cpu().numpy()
-					rewards[idx] = reward
+					rewards[l] = reward
 					if i == 0:
 						initial_states.append(next_initial_state)
 
-					idx += 1
+					# idx += 1
 						# rewards.append(reward)
 					# else:
 						# rewards[l-1] += reward
@@ -69,7 +69,7 @@ class Rollout(object):
 					# x = x.cuda()
 
 				reward = t.sigmoid(self.discriminator(x))
-				rewards[idx] = reward
+				rewards[-1] = reward
 				# reward = reward.data.cpu().numpy() # Detach from computational graph
 				# if i == 0:
 					# rewards.append(reward)
