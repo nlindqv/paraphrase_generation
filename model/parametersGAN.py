@@ -18,6 +18,7 @@ class Parameters:
         self.discriminator_rnn_size = 600
         self.discriminator_num_layers = 2
 
+        self.use_two_path_loss = use_two_path_loss
 
         self.kld_penalty_weight = 1.0
         self.cross_entropy_penalty_weight = 79.0

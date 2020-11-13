@@ -342,7 +342,7 @@ if __name__ == "__main__":
             dg_result_valid += [dg_loss]
             d_result_valid += [d_loss]
 
-            total_loss = ce_1 + ce_2 + kld + dg_loss
+            total_loss = ce_1 * lambda1 + ce_2 *lambda2 + kld * lambda1 + dg_loss * lambda3
             if iteration > 10000:
                 if np.isinf(best_total_loss):
                     best_total_loss = total_loss
