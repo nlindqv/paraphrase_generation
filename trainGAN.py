@@ -21,7 +21,7 @@ from model.discriminator import Discriminator
 import gc
 
 lambdas = [0.5, 0.5, 0.01]
-rollout_num = 8
+rollout_num = 1
 
 def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader, scaler):
     def train(i, batch_size, use_cuda, dropout):
@@ -48,8 +48,13 @@ def trainer(generator, g_optim, discriminator, d_optim, rollout, batch_loader, s
             ce_1 = F.cross_entropy(logits, target)
             ce_2 = F.cross_entropy(logits2, target)
 
+            # print('\n\n')
+            # print(encoder_input_source)
+            # [print([t.sum(t.pow(encoder_input_source[i][j], 2)).item() for j in range(encoder_input_source.size()[1])]) for i in range(batch_size)]
+            # print(logits2)
             # Generate fake data
             prediction = F.softmax(logits2, dim=-1)
+            # print(prediction)
             samples = prediction.multinomial(1).view(batch_size, -1)
             gen_samples = batch_loader.embed_batch_from_index(samples)
 
@@ -299,7 +304,7 @@ if __name__ == "__main__":
         rollout.update_params()
 
         # validation
-        if iteration % 500 == 0:
+        if iteration % 500 == 0 and False:
             ce_result_train += [np.mean(ce_cur_train)]
             ce2_result_train += [np.mean(ce2_cur_train)]
             kld_result_train += [np.mean(kld_cur_train)]
