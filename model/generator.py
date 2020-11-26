@@ -99,8 +99,8 @@ class Generator(nn.Module):
             logits, initial_state = self.decoder(None, decoder_input, z, 0.0, initial_state)
             logits = logits.view(-1, self.params.vocab_size)
             prediction = F.softmax(logits, dim=-1)
-            # word = batch_loader.likely_word_from_distribution(prediction.data.cpu().numpy()[-1])
-            word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[-1])
+            word = batch_loader.likely_word_from_distribution(prediction.data.cpu().numpy()[-1])
+            # word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[-1])
             if word == batch_loader.end_label:
                 break
             result += ' ' + word
@@ -141,8 +141,8 @@ class Generator(nn.Module):
                 next_initial_state = initial_state
 
             prediction = F.softmax(logits, dim=-1)
-            words = batch_loader.likely_words_from_distribution(prediction.data.cpu().numpy())
-            print(words)
+            words = [batch_loader.likely_word_from_distribution(p) for p in prediction.data.cpu().numpy()]
+
             all_end_labels = True
             for word in words:
                 if word != batch_loader.end_label:

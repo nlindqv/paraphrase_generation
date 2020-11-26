@@ -15,7 +15,7 @@ class Rollout(object):
 	def __init__(self, generator, discriminator, update_rate, rollout_num):
 		super(Rollout, self).__init__()
 		self.generator = generator
-		self.generator_copy = copy.deepcopy(generator)
+		# self.generator_copy = copy.deepcopy(generator)
 		self.discriminator = discriminator
 		self.update_rate = update_rate
 		self.rollout_num = rollout_num
@@ -30,14 +30,14 @@ class Rollout(object):
 		"""
 		# with t.no_grad():
 		[batch_size, seq_len, embed_size] = x.size()
-		mu, logvar = self.generator_copy.encoder(encoder_input[0], None)
+		mu, logvar = self.generator.encoder(encoder_input[0], None)
 		std = t.exp(0.5 * logvar)
-		z = Variable(t.randn([batch_size, self.generator_copy.params.latent_variable_size]))
+		z = Variable(t.randn([batch_size, self.generator.params.latent_variable_size]))
 		if use_cuda:
 			z = z.cuda()
 		z = z * std + mu
 
-		initial_states = [self.generator_copy.decoder.build_initial_state(decoder_input_source)]
+		initial_states = [self.generator.decoder.build_initial_state(decoder_input_source)]
 		rewards = []
 			# rewards = t.zeros([seq_len, batch_size])
 			# if use_cuda:
@@ -47,7 +47,7 @@ class Rollout(object):
 			# idx = 0
 		for i in range(self.rollout_num):
 			for l in range(1, seq_len):
-				samples, next_initial_state = self.generator_copy.sample(x[:, 0:l, :], seq_len, z, initial_states[l-1], use_cuda, batch_loader) # (batch_size, sequence_len)
+				samples, next_initial_state = self.generator.sample(x[:, 0:l, :], seq_len, z, initial_states[l-1], use_cuda, batch_loader) # (batch_size, sequence_len)
 					# if use_cuda:
 					# 	samples = samples.cuda()
 
@@ -81,12 +81,12 @@ class Rollout(object):
 
 		return rewards
 
-	def update_params(self):
-		dic = {}
-		for name, param in self.generator.named_parameters():
-			dic[name] = param.data
-		for name, param in self.generator_copy.named_parameters():
-			if name.startswith('emb'):
-				param.data = dic[name]
-			else:
-				param.data = self.update_rate * param.data + (1 - self.update_rate) * dic[name]
+	# def update_params(self):
+	# 	dic = {}
+	# 	for name, param in self.generator.named_parameters():
+	# 		dic[name] = param.data
+	# 	for name, param in self.generator_copy.named_parameters():
+	# 		if name.startswith('emb'):
+	# 			param.data = dic[name]
+	# 		else:
+	# 			param.data = self.update_rate * param.data + (1 - self.update_rate) * dic[name]
