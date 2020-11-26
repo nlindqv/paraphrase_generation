@@ -279,8 +279,8 @@ if __name__ == "__main__":
     validate = validater(generator, discriminator, rollout, batch_loader)
 
 
-    converge_criterion, converge_count = 10, 0
-    best_total_loss = np.inf
+#    converge_criterion, converge_count = 1000, 0
+#    best_total_loss = np.inf
 
     start = time.time_ns()
 
@@ -301,7 +301,7 @@ if __name__ == "__main__":
         dg_cur_train += [dg_loss.data.cpu().numpy()]
         d_cur_train += [d_loss.data.cpu().numpy()]
 
-        rollout.update_params()
+#        rollout.update_params()
 
         # validation
         if iteration % 500 == 0:
@@ -355,15 +355,15 @@ if __name__ == "__main__":
             d_result_valid += [d_loss]
 
             total_loss = ce_1 * lambda1 + ce_2 *lambda2 + kld * lambda1 + dg_loss * lambda3
-            if iteration > 10000:
-                if np.isinf(best_total_loss):
-                    best_total_loss = total_loss
-                else:
-                    if total_loss >= best_total_loss:
-                        converge_count += 1
-                    else:
-                        best_total_loss = total_loss
-                        converge_count = 0
+ #           if iteration > 10000:
+ #               if np.isinf(best_total_loss):
+ #                   best_total_loss = total_loss
+ #               else:
+ #                   if total_loss >= best_total_loss:
+ #                       converge_count += 1
+ #                   else:
+ #                       best_total_loss = total_loss
+ #                       converge_count = 0
 
             print('\n')
             print('------------VALID-------------')
@@ -390,9 +390,9 @@ if __name__ == "__main__":
                 print('...........................')
 
         # save model
-        if (iteration % 10000 == 0 and iteration != 0) or iteration == (args.num_iterations - 1) or (converge_count == converge_criterion):
-            t.save(generator.state_dict(), 'saved_models/trained_generator_' + args.model_name)
-            t.save(discriminator.state_dict(), 'saved_models/trained_discrminator_' + args.model_name)
+        if (iteration % 10000 == 0 and iteration != 0) or iteration == (args.num_iterations - 1):
+            t.save(generator.state_dict(), 'saved_models/trained_generator_' + args.model_name + '_' iteration//1000)
+            t.save(discriminator.state_dict(), 'saved_models/trained_discrminator_' + args.model_name + '_' iteration//1000)
             np.save('logs/{}/ce_result_valid.npy'.format(args.model_name), np.array(ce_result_valid))
             np.save('logs/{}/ce_result_train.npy'.format(args.model_name), np.array(ce_result_train))
             np.save('logs/{}/kld_result_valid'.format(args.model_name), np.array(kld_result_valid))
@@ -405,7 +405,7 @@ if __name__ == "__main__":
             np.save('logs/{}/d_result_train.npy'.format(args.model_name), np.array(d_result_train))
 
         #interm sampling
-        if (iteration % 10000 == 0 and iteration != 0) or iteration == (args.num_iterations - 1) or (converge_count == converge_criterion):
+        if (iteration % 10000 == 0 and iteration != 0) or iteration == (args.num_iterations - 1):
             if args.interm_sampling:
                 args.seq_len = 30
 
