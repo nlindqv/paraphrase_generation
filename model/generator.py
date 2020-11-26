@@ -142,7 +142,7 @@ class Generator(nn.Module):
 
             prediction = F.softmax(logits, dim=-1)
             words = batch_loader.likely_words_from_distribution(prediction.data.cpu().numpy())
-
+            print(words)
             all_end_labels = True
             for word in words:
                 if word != batch_loader.end_label:
