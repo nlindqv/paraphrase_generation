@@ -217,11 +217,15 @@ class BatchLoader:
 
     def sample_word_from_distribution(self, distribution):
         assert distribution.shape[-1] == self.vocab_size
+        distribution[self.word_to_idx[self.unk_label]] = 0 # Don't allow to sample <unk> token
+        distribution = distribution / np.sum(distribution)
         ix = np.random.choice(range(self.vocab_size), p=distribution.ravel())
         return self.idx_to_word[ix]
 
     def likely_word_from_distribution(self, distribution):
         assert distribution.shape[-1] == self.vocab_size
+        distribution[self.word_to_idx[self.unk_label]] = 0 # Don't allow to sample <unk> token
+        distribution = distribution / np.sum(distribution)
         ix = np.argmax(distribution.ravel())
         return self.idx_to_word[ix]
 

@@ -232,6 +232,7 @@ class Paraphraser(nn.Module):
         input = [var.cuda() if use_cuda else var for var in input]
         return self.sample_with_input(batch_loader, seq_len, use_cuda, input)
 
+    """ Should only be used with a batch size of 1 """
     def sample_from_normal(self, batch_loader, seq_len, use_cuda, input):
         [_, _, decoder_input_source, _, _] = input
         [batch_size, _, _] = decoder_input_source.size()
@@ -250,10 +251,9 @@ class Paraphraser(nn.Module):
 
             logits, initial_state = self.decoder(None, decoder_input, z, 0.0, initial_state)
             logits = logits.view(-1, self.params.vocab_size)
-            # prediction = F.softmax(logits)
             prediction = F.softmax(logits, dim=-1)
-            # word = batch_loader.likely_word_from_distribution(prediction.data.cpu().numpy()[-1])
-            word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[-1])
+            word = batch_loader.likely_word_from_distribution(prediction.data.cpu().numpy()[-1])
+            # word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[-1])
             if word == batch_loader.end_label:
                 break
             result += ' ' + word
@@ -261,6 +261,67 @@ class Paraphraser(nn.Module):
             decoder_input = batch_loader.get_raw_input_from_sentences([word])
 
         return result
+
+    def beam_search(self, batch_loader, seq_len, use_cuda, input, k, sample_from_normal):
+        [encoder_input_source, _, decoder_input_source, _, _] = input
+
+        # encode
+        [batch_size, _, _] = decoder_input_source.size()
+
+        z = Variable(t.randn([batch_size, self.params.latent_variable_size]))
+        if use_cuda:
+            z = z.cuda()
+
+        if not sample_from_normal:
+            mu, logvar = self.encoder(encoder_input_source, None)
+            std = t.exp(0.5 * logvar)
+            z = z * std + mu
+
+        initial_state = self.decoder.build_initial_state(decoder_input_source)
+        decoder_input = batch_loader.get_raw_input_from_sentences([batch_loader.go_label])
+        if use_cuda:
+            decoder_input = decoder_input.cuda()
+
+        logits, initial_state = self.decoder(None, decoder_input, z, 0.0, initial_state)
+        logits = logits.view(-1, self.params.vocab_size)
+        predictions = F.softmax(logits, dim=-1)
+
+        # sequences = [[list(), 0.0]]
+        sequences = [[list(), 0.0, initial_state, decoder_input, False]]
+
+        # walk over each step in sequence
+        for seq in range(seq_len):
+            all_candidates = list()
+            # expand each current candidate
+            for i in range(len(sequences)):
+                seq, score, initial_state, decoder_input, complete = sequences[i]
+                if complete:
+                    all_candidates.append(sequences[i])
+                    continue
+                if use_cuda:
+                    decoder_input = decoder_input.cuda()
+
+                logits, initial_state = self.decoder(None, decoder_input, z, 0.0, initial_state)
+                logits = logits.view(-1, self.params.vocab_size)
+                prediction = F.softmax(logits, dim=-1).data.cpu().numpy()[-1]
+                for j in range(prediction.shape[0]):
+                    word = batch_loader.get_word_by_idx(j)
+                    if word == batch_loader.unk_label:
+                        continue
+                    decoder_input = batch_loader.get_raw_input_from_sentences([word])
+                    if word == batch_loader.end_label:
+                        candidate = [seq, score - math.log(prediction[j]), initial_state, decoder_input, True]
+                    else:
+                        candidate = [seq + [word], score - math.log(prediction[j]), initial_state, decoder_input, False]
+                    all_candidates.append(candidate)
+            # order all candidates by score
+            ordered = sorted(all_candidates, key=lambda tup:tup[1])
+            # select k best
+            sequences = ordered[:k]
+        results = []
+        for sequence in sequences:
+            results.append(' '.join(sequence[0]))
+        return results
 
     def sample_with_phrase(self, batch_loader, seq_len, use_cuda, source_sent):
         pass
