@@ -42,7 +42,9 @@ def sample_with_input_file(batch_loader, paraphraser, args):
     return result, target, source
 
 def sample_with_beam(batch_loader, paraphraser, args, decoder_only, beam_size=5):
-    results, target, source, i = [] , [], [] , 0
+    result, target, source, i = [] , [], [] , 0
+    for j in range(beam_size):
+        result.append([])
     while True:
         start = time.time()
         next_batch = batch_loader.next_batch_from_file(batch_size=1,
@@ -54,22 +56,27 @@ def sample_with_beam(batch_loader, paraphraser, args, decoder_only, beam_size=5)
         input, sentences = next_batch
         input = [var.cuda() if args.use_cuda else var for var in input]
 
-        results += [paraphraser.beam_search(batch_loader, args.seq_len, args.use_cuda, input, beam_size, decoder_only)]
+        results = paraphraser.beam_search(batch_loader, args.seq_len, args.use_cuda, input, beam_size, decoder_only)
+
+        print(len(results))
+        for j in range(beam_size):
+            print(results[j])
+            result[j] += [results[j]]
 
         target += [' '.join(sentences[1][0])]
         source += [' '.join(sentences[0][0])]
-        if i % 1000 == 0:
+        if i % 1 == 0:
             print(i)
             print('source : ', ' '.join(sentences[0][0]))
             print('target : ', ' '.join(sentences[1][0]))
             for j in range(beam_size):
-                print('sampled : ', results[-1][j])
+                print('sampled : ', result[j][-1])
         i += 1
         print(f'Iteration {i}/4000, elapsed time: {(time.time()-start):.0f}s')
     return results, target, source
 
 
-def sample_with_input(batch_loader, paraphraser, args, decoder_only, num_samples=1):
+def sample_with_input(batch_loader, paraphraser, args, decoder_only, num_samples=1, ml=True):
     result, target, source, i = [] , [], [] , 0
     for j in range(num_samples):
         result.append([])
@@ -85,9 +92,9 @@ def sample_with_input(batch_loader, paraphraser, args, decoder_only, num_samples
 
         for j in range(num_samples):
             if decoder_only:
-                result[j] += [paraphraser.sample_from_normal(batch_loader, args.seq_len, args.use_cuda, input)]
+                result[j] += [paraphraser.sample_from_normal(batch_loader, args.seq_len, args.use_cuda, input, ml)]
             else:
-                result[j] += [paraphraser.sample_with_input(batch_loader, args.seq_len, args.use_cuda, input)]
+                result[j] += [paraphraser.sample_with_input(batch_loader, args.seq_len, args.use_cuda, input, ml)]
 
 
         target += [' '.join(sentences[1][0])]

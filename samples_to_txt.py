@@ -20,6 +20,8 @@ def main():
     parser.add_argument('--beam', type=bool, default=False, metavar='B', help='name of model to save (default: "")')
     parser.add_argument('--use-cuda', type=bool, default=False, metavar='CUDA', help='use cuda (default: False)')
     parser.add_argument('--seq-len', default=30, metavar='SL', help='max length of sequence (default: 30)')
+    parser.add_argument('--ml', type=bool, default=False, metavar='ML', help='sample by maximum likelihood')
+
 
     args = parser.parse_args()
 
@@ -31,6 +33,10 @@ def main():
 
 
 def sample(args):
+    # Create locations to store samples
+    if not os.path.isdir('logs/'+ args.model_name + '/samples'):
+        os.mkdir('logs/'+ args.model_name + '/samples')
+
     batch_loader = BatchLoader()
     # Load model...
     if 'ori' in args.model_name.lower() and not 'gan' in args.model_name.lower() or 'tpl' in args.model_name.lower():
@@ -48,17 +54,18 @@ def sample(args):
                                     decoder_only=('ori' in args.model_name.lower()),
                                     beam_size=(args.num_samples if args.num_samples != 1 else 5))
         for i in range(args.num_samples):
-            np.savetxt(f'logs/{args.model_name}/sampled_beam_{i}.txt', np.array(samples[i]), delimiter='\n', fmt='%s')
-        np.savetxt(f'logs/{args.model_name}/target_beam.txt', np.array(target), delimiter='\n', fmt='%s')
-        np.savetxt(f'logs/{args.model_name}/source_beam.txt', np.array(source), delimiter='\n', fmt='%s')
+            np.savetxt(f'logs/{args.model_name}/samples/sampled_beam_{i}.txt', np.array(samples[i]), delimiter='\n', fmt='%s')
+        np.savetxt(f'logs/{args.model_name}/samples/target_beam.txt', np.array(target), delimiter='\n', fmt='%s')
+        np.savetxt(f'logs/{args.model_name}/samples/source_beam.txt', np.array(source), delimiter='\n', fmt='%s')
     else:
         samples, target, source = sample_with_input(batch_loader, paraphraser, args,
                                     decoder_only=('ori' in args.model_name.lower() and not 'gan' in args.model_name.lower()),
-                                    num_samples=args.num_samples)
+                                    num_samples=args.num_samples,
+                                    ml=args.ml)
         for i in range(args.num_samples):
-            np.savetxt(f'logs/{args.model_name}/sampled_{i}.txt', np.array(samples[i]), delimiter='\n', fmt='%s')
-        np.savetxt(f'logs/{args.model_name}/target.txt', np.array(target), delimiter='\n', fmt='%s')
-        np.savetxt(f'logs/{args.model_name}/source.txt', np.array(source), delimiter='\n', fmt='%s')
+            np.savetxt(f'logs/{args.model_name}/samples/sampled' + ('_ml' if args.ml else '_s') + f'_{i}.txt', np.array(samples[i]), delimiter='\n', fmt='%s')
+        np.savetxt(f'logs/{args.model_name}/samples/target' + ('_ml' if args.ml else '_s') + '.txt', np.array(target), delimiter='\n', fmt='%s')
+        np.savetxt(f'logs/{args.model_name}/samples/source' + ('_ml' if args.ml else '_s') + '.txt', np.array(source), delimiter='\n', fmt='%s')
 
 def print_samples(args):
     input_file = 'quora_test'
@@ -66,15 +73,15 @@ def print_samples(args):
     if args.iteration == '':
         sampled_file_dst = []
         for i in range(args.num_samples):
-            sampled_file_dst.append(f'logs/{args.model_name}/sampled_{i}.txt')
-        target_file_dst = f'logs/{args.model_name}/target.txt'
-        source_file_dst = f'logs/{args.model_name}/source.txt'
+            sampled_file_dst.append(f'logs/{args.model_name}/samples/sampled_{i}.txt')
+        target_file_dst = f'logs/{args.model_name}/samples/target.txt'
+        source_file_dst = f'logs/{args.model_name}/samples/source.txt'
 
         sampled = [list(np.loadtxt(sampled_file_dst[i], dtype='U', delimiter='\n')) for i in range(args.num_samples)]
     else:
-        sampled_file_dst = f'logs/{args.model_name}/intermediate/sampled_{args.iteration}k.txt'
-        target_file_dst = f'logs/{args.model_name}/intermediate/target_{args.iteration}k.txt'
-        source_file_dst = f'logs/{args.model_name}/intermediate/source_{args.iteration}k.txt'
+        sampled_file_dst = f'logs/{args.model_name}/intermediate/sampledML_{args.iteration}k.txt'
+        target_file_dst = f'logs/{args.model_name}/intermediate/targetML_{args.iteration}k.txt'
+        source_file_dst = f'logs/{args.model_name}/intermediate/sourceML_{args.iteration}k.txt'
 
         sampled = [list(np.loadtxt(sampled_file_dst, dtype='U', delimiter='\n'))]
     target = list(np.loadtxt(target_file_dst, dtype='U', delimiter='\n'))

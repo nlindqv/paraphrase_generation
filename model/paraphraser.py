@@ -188,7 +188,7 @@ class Paraphraser(nn.Module):
 
         return validate
 
-    def sample_with_input(self, batch_loader, seq_len, use_cuda, input):
+    def sample_with_input(self, batch_loader, seq_len, use_cuda, input, ml=True):
         [encoder_input_source, encoder_input_target, decoder_input_source, _, _] = input
 
         encoder_input = [encoder_input_source, encoder_input_target]
@@ -217,8 +217,10 @@ class Paraphraser(nn.Module):
             logits, initial_state = self.decoder(None, decoder_input, z, 0.0, initial_state)
             logits = logits.view(-1, self.params.vocab_size)
             prediction = F.softmax(logits, dim=-1)
-            # word = batch_loader.likely_word_from_distribution(prediction.data.cpu().numpy()[-1])
-            word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[-1])
+            if ml:
+                word = batch_loader.likely_word_from_distribution(prediction.data.cpu().numpy()[-1])
+            else:
+                word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[-1])
             if word == batch_loader.end_label:
                 break
             result += ' ' + word
@@ -233,7 +235,7 @@ class Paraphraser(nn.Module):
         return self.sample_with_input(batch_loader, seq_len, use_cuda, input)
 
     """ Should only be used with a batch size of 1 """
-    def sample_from_normal(self, batch_loader, seq_len, use_cuda, input):
+    def sample_from_normal(self, batch_loader, seq_len, use_cuda, input, ml=True):
         [_, _, decoder_input_source, _, _] = input
         [batch_size, _, _] = decoder_input_source.size()
 
@@ -252,8 +254,10 @@ class Paraphraser(nn.Module):
             logits, initial_state = self.decoder(None, decoder_input, z, 0.0, initial_state)
             logits = logits.view(-1, self.params.vocab_size)
             prediction = F.softmax(logits, dim=-1)
-            word = batch_loader.likely_word_from_distribution(prediction.data.cpu().numpy()[-1])
-            # word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[-1])
+            if ml:
+                word = batch_loader.likely_word_from_distribution(prediction.data.cpu().numpy()[-1])
+            else:
+                word = batch_loader.sample_word_from_distribution(prediction.data.cpu().numpy()[-1])
             if word == batch_loader.end_label:
                 break
             result += ' ' + word
