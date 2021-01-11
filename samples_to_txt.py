@@ -51,7 +51,10 @@ def sample(args):
         from model.parametersGAN import Parameters
         parameters = Parameters(batch_loader.max_seq_len, batch_loader.vocab_size)
         paraphraser = Generator(parameters)
-        paraphraser.load_state_dict(t.load('saved_models/trained_generator_' + args.model_name, map_location=t.device('cpu')))
+        if args.use_cuda:
+            paraphraser.load_state_dict(t.load('saved_models/trained_generator_' + args.model_name))
+        else:
+            paraphraser.load_state_dict(t.load('saved_models/trained_generator_' + args.model_name, map_location=t.device('cpu')))
     if args.beam:
         samples, target, source = sample_with_beam(batch_loader, paraphraser, args,
                                     decoder_only=('ori' in args.model_name.lower()),
