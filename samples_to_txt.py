@@ -57,7 +57,7 @@ def sample(args):
             paraphraser.load_state_dict(t.load('saved_models/trained_generator_' + args.model_name, map_location=t.device('cpu')))
     if args.beam:
         samples, target, source = sample_with_beam(batch_loader, paraphraser, args,
-                                    decoder_only=('ori' in args.model_name.lower()),
+                                    decoder_only=('ori' in args.model_name.lower() and not 'gan' in args.model_name.lower()),
                                     beam_size=(args.num_samples if args.num_samples != 1 else 5))
         for i in range(args.num_samples):
             np.savetxt(f'logs/{args.model_name}/samples/sampled_beam_{i}.txt', np.array(samples[i]), delimiter='\n', fmt='%s')

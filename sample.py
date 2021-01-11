@@ -45,6 +45,10 @@ def sample_with_beam(batch_loader, paraphraser, args, decoder_only, beam_size=5)
     result, target, source, i = [] , [], [] , 0
     for j in range(beam_size):
         result.append([])
+
+    if args.use_cuda:
+        paraphraser = paraphraser.cuda()
+
     while True:
         start = time.time()
         next_batch = batch_loader.next_batch_from_file(batch_size=1,
@@ -58,9 +62,7 @@ def sample_with_beam(batch_loader, paraphraser, args, decoder_only, beam_size=5)
 
         results = paraphraser.beam_search(batch_loader, args.seq_len, args.use_cuda, input, beam_size, decoder_only)
 
-        print(len(results))
         for j in range(beam_size):
-            print(results[j])
             result[j] += [results[j]]
 
         target += [' '.join(sentences[1][0])]
@@ -80,6 +82,10 @@ def sample_with_input(batch_loader, paraphraser, args, decoder_only, num_samples
     result, target, source, i = [] , [], [] , 0
     for j in range(num_samples):
         result.append([])
+
+    if args.use_cuda:
+        paraphraser = paraphraser.cuda()
+        
     while True:
         next_batch = batch_loader.next_batch_from_file(batch_size=1,
          file_name='quora_test', return_sentences=True)
