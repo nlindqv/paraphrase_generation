@@ -44,7 +44,7 @@ def sample(args):
         parameters = Parameters(batch_loader.max_seq_len, batch_loader.vocab_size, use_two_path_loss=('tpl' in args.model_name.lower()))
         paraphraser = Paraphraser(parameters)
         if args.use_cuda:
-            paraphraser.load_state_dict(t.load('saved_models/trained_paraphraser_' + args.model_namegit a))
+            paraphraser.load_state_dict(t.load('saved_models/trained_paraphraser_' + args.model_name))
         else:
             paraphraser.load_state_dict(t.load('saved_models/trained_paraphraser_' + args.model_name, map_location=t.device('cpu')))
     elif 'gan' in args.model_name.lower():
