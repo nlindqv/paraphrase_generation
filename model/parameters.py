@@ -5,7 +5,7 @@ class Parameters:
         self.max_seq_len = int(max_seq_len) + 1  # go or eos token
 
         self.vocab_size = int(vocab_size)
-        self.word_embed_size = 300 # must be 300 for Glove300 embedding
+        self.word_embed_size = 300 # must be 300 for fastText embedding
 
         self.encoder_rnn_size = 600
         self.encoder_num_layers = 1
@@ -16,7 +16,8 @@ class Parameters:
         self.decoder_num_layers = 2
 
         self.kld_penalty_weight = 1.0
-        self.cross_entropy_penalty_weight = 79.0
+        self.ce_weight = 16.0
+        self.ce2_weight = 16.0
 
         self.use_two_path_loss = use_two_path_loss
 

@@ -181,3 +181,13 @@ if __name__ == "__main__":
                 print(sampled_file_dst)
                 print(target_file_dst)
                 print(source_file_dst)
+
+        if (iteration % 250000 == 0 and iteration != 0):
+            t.save(paraphraser.state_dict(), 'saved_models/trained_paraphraser_250k_' + args.model_name)
+            np.save('logs/{}/ce_result_valid.npy'.format(args.model_name), np.array(ce_result_valid))
+            np.save('logs/{}/kld_result_valid.npy'.format(args.model_name), np.array(kld_result_valid))
+            np.save('logs/{}/ce_result_train.npy'.format(args.model_name), np.array(ce_result_train))
+            np.save('logs/{}/kld_result_train.npy'.format(args.model_name), np.array(kld_result_train))
+            if args.use_two_path_loss:
+                np.save('logs/{}/ce2_result_valid.npy'.format(args.model_name), np.array(ce2_result_valid))
+                np.save('logs/{}/ce2_result_train.npy'.format(args.model_name), np.array(ce2_result_train))
