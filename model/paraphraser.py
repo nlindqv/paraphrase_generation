@@ -103,7 +103,7 @@ class Paraphraser(nn.Module):
                 cross_entropy2 = 0
 
             loss = self.params.ce_weight * cross_entropy \
-                 + self.params.ce2_weight * cross_entropy2) \
+                 + self.params.ce2_weight * cross_entropy2 \
                  + self.params.get_kld_coef(i) * kld
 
             optimizer.zero_grad()
